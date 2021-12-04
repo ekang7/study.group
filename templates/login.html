@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Login
+{% endblock %}
+
+{% block main %}
+    <!-- display title of page -->
+    <div class="col-sm-8 type1">
+        <h1>Login</h1>
+    </div>
+
+    
+    
+    <!-- login input -->
+    <div class="container-fluid">
+        <form action="/login" method="post">
+            <div class="type2">
+                <input autocomplete="off" autofocus id="email" name="email" placeholder="Harvard email address" type="text">
+                <input id="password" name="password" placeholder="Password" type="password">
+                <button type="submit">Login</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

@@ -1,0 +1,46 @@
+algorithm ideas:
+
+1. match by course 
+    start with first person in table - use first course as current course
+    sql query to find all matching course ids in array of courses
+2. time thing that Edward has to see where times intersect
+    use to check which of the people with current course prefer longest overlapping time
+    then check which of the people with current course have any overlapping time
+    when the time is stored in the database it should be stored as 
+    #-#
+    where # = 0 - 23 where 0 is 12 AM and 23 is 11 PM
+3. group categories (sm, med, lg)
+4. location/virtual
+    possible locations: Cabot Library, Widener Library, Lamont Library, Smith Center, Dorm Room
+   
+   <select id = "location" name = "location" type = "text">
+        {% for location in locations %}
+                <option>{{ location }}</option>
+        {% endfor %}
+    
+    request to add location button
+
+create database: https://edstem.org/us/courses/7325/discussion/899713
+
+5. number of times you want to meet each week?
+
+maybe https://stackoverflow.com/questions/34425237/algorithm-to-find-meeting-time-slots-where-all-participants-are-available
+
+
+'''Assume that course is the course they enter into the form
+Assume that size is the size preference they enter into the form
+Assume that timelist is the comma separated list of times that we create from the times they enter into the form
+Assume that locationlist is the comma separrated list of locations that we create from the locations they enter into the form
+
+table = db.execute("SELECT courses FROM users WHERE username = ?", username)
+try:
+    currentcourses = table[0]['courses']
+    currentsizes = table[0]['sizes']
+    currenttimes = table[0]['times]
+    currentlocations = table[0]['locations']
+    if (len(currentcourses)>0):
+        db.execute("UPDATE users SET courses = ?, sizes = ?, times = ?, locations = ? WHERE username = ?", currentcourses + "," + course, currentsizes + "," + size, currenttimes + ";" + timelist, currentlocations + ";" + locationlist, username)
+    else:
+        db.execute("UPDATE users SET courses = ?, sizes = ?, times = ?, locations = ? WHERE username = ?", course, size, timelist, locationlist, username)
+except:
+db.execute("UPDATE users SET courses = ?, sizes = ?, times = ?, locations = ? WHERE username = ?", course, size, timelist, locationlist, username)'''

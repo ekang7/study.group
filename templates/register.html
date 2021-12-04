@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+    <!-- display title of page -->
+    <div class="col-sm-8 type1">
+        <h1>Register</h1>
+    </div>
+
+    <!-- registration form -->
+    <form action="/register" method="post">
+        <div class="type2">
+            <label for="email">Register with your Harvard email address:</label>
+            <input autocomplete="off" autofocus  id="email" name="email" placeholder="Harvard email address" type="text">
+            <label for="password">Create a new password:</label>
+            <input id="password" name="password" placeholder="Password" type="password">
+            <label for="confirmation">Please confirm your new password:</label>
+            <input id="confirmation" name="confirmation" placeholder="Password Confirmation" type="password"> 
+            <button type="submit">Register</button>
+        </div>
+    </form>
+{% endblock %}
