@@ -32,15 +32,15 @@ Assume that size is the size preference they enter into the form
 Assume that timelist is the comma separated list of times that we create from the times they enter into the form
 Assume that locationlist is the comma separrated list of locations that we create from the locations they enter into the form
 
-table = db.execute("SELECT courses FROM users WHERE username = ?", username)
+table = db.execute("SELECT courses FROM prefs WHERE username = ?", username)
 try:
     currentcourses = table[0]['courses']
     currentsizes = table[0]['sizes']
     currenttimes = table[0]['times]
     currentlocations = table[0]['locations']
     if (len(currentcourses)>0):
-        db.execute("UPDATE users SET courses = ?, sizes = ?, times = ?, locations = ? WHERE username = ?", currentcourses + "," + course, currentsizes + "," + size, currenttimes + ";" + timelist, currentlocations + ";" + locationlist, username)
+        db.execute("UPDATE prefs SET courses = ?, sizes = ?, times = ?, locations = ? WHERE username = ?", currentcourses + "," + course, currentsizes + "," + size, currenttimes + ";" + timelist, currentlocations + ";" + locationlist, username)
     else:
-        db.execute("UPDATE users SET courses = ?, sizes = ?, times = ?, locations = ? WHERE username = ?", course, size, timelist, locationlist, username)
+        db.execute("UPDATE prefs SET courses = ?, sizes = ?, times = ?, locations = ? WHERE username = ?", course, size, timelist, locationlist, username)
 except:
-db.execute("UPDATE users SET courses = ?, sizes = ?, times = ?, locations = ? WHERE username = ?", course, size, timelist, locationlist, username)'''
+db.execute("UPDATE prefs SET courses = ?, sizes = ?, times = ?, locations = ? WHERE username = ?", course, size, timelist, locationlist, username)'''
