@@ -225,13 +225,19 @@ def match():
     uniqueCourses = db.execute("SELECT DISTINCT course FROM prefs;")
     for uniqueCourse in uniqueCourses: 
         timematch(uniqueCourse["course"])
+
+# prereq = the sorting has already been filtered by course 
 def timematch(uniqueCourse): 
     # stackedTimelines stores how many people are available at each time represented by each index of 
     # stackedTimelines 
     # assume 
     stackedTimelines = [0] * 96
     timelines = db.execute("SELECT times FROM prefs WHERE course = ?", uniqueCourse)
+    #https://www.kite.com/python/answers/how-to-convert-a-comma-separated-string-to-a-list-in-python#:~:text=Use%20str.,separated%20string%20into%20a%20list.
     
+    
+# prereq = the sorting has already been filtered by course and time 
+# Grouping algorithm for people for a particular time interval by group size 
 def grouper():
     # TODO
     return 0
