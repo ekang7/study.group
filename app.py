@@ -240,15 +240,11 @@ def timematch(uniqueCourse):
     # assume 
     stackedTimelines = [0] * 96
     timelines = db.execute("SELECT times FROM prefs WHERE course = ?", uniqueCourse)
-<<<<<<< HEAD
     #https://www.kite.com/python/answers/how-to-convert-a-comma-separated-string-to-a-list-in-python#:~:text=Use%20str.,separated%20string%20into%20a%20list.
-    
-=======
     for timeline in timelines: 
         timeline = timeline["times"]
         # currently timeline looks like "time, time, time"
         
->>>>>>> 53cf3415f1e4b69009a229d882435a2367f4e15a
     
 # prereq = the sorting has already been filtered by course and time 
 # Grouping algorithm for people for a particular time interval by group size 
