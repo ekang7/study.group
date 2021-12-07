@@ -63,10 +63,11 @@ for x in range(0,10):
     matrix.append(row)
 stackedTimelines =[[0, 0], [0,0]] 
 stackedTimelines = stackedTimelines + stackedTimelines
+print(stackedTimelines)
 for time in timelist: 
         index = time_to_index[time]
         print(index)
       #  stackedTimelines[index][0] += 1
      #   stackedTimelines[index][1]=time
 stackedTimelines[0][0] +=1
-print(stackedTimelines)
+print(len(stackedTimelines))

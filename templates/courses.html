@@ -22,6 +22,7 @@
                 <button id="add1">Add Resource</button>
                 <div id="addResource" style="display:none">
                     <form action="/courses" method="post">
+                        <input id="resourceCourse" name="resourceCourse" type="hidden" value={{course}}>
                         <label for="resourceLink">Link to resource:</label>
                         <input id="resourceLink" name="resourceLink" placeholder="Put Link Here" type="url">
                         <label for="resourceTitle">Title of resource:</label>
@@ -38,7 +39,7 @@
                     document.getElementById('add1').style.display = 'none'
                 });
                 document.querySelector('#add2').addEventListener('click', function(){
-                    db.execute("INSERT INTO resources VALUES (?, ?, ?)", course, resourceLink, resourceTitle)
+                    location.href = "./courses.html";
                 });
             </script>
         {% endfor %}

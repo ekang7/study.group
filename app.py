@@ -42,6 +42,11 @@ db = SQL("sqlite:///users.db")
 # List of days of the week 
 daysoftheweek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
+# course = [people emails]
+'''duplicates = {
+    
+}'''
+
 # dictionary that serves as a converter between times and indices 
 time_to_index = {
                     "12:00am": 0,
@@ -316,13 +321,32 @@ def prefs():
         return render_template("prefs.html", locations=locations, daysoftheweek = daysoftheweek, time_to_index = time_to_index)
 
 def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
+    #https://www.programiz.com/python-programming/methods/string/count
+    places = {
+                "Cabot Library": 0, 
+                "Dorm Room": 0, 
+                "Lamont Library": 0, 
+                "Smith Center": 0, 
+                "Widener Library": 0
+            }
+    for key in places: 
+        places[key] = locations.count(key)
+    locations = places 
     #people as a list
     #locations as a dictionary
     #uniquecourse as a integer valiue
     #matched as a boolean
     # day is one day because we are only matching for one day per week
     # configuration of mail
-    
+    '''print("UHH", duplicates)'''
+    #duplicates[uniqueCourse] = people
+    #noduplicates = True
+    '''for person in people:
+        if person in duplicates[uniqueCourse]:
+            print("HMMMMMMMMMMMMMMMMMMMM")
+            noduplicates = False
+            break
+    if noduplicates: '''
     print("LOOOOOOOOOOOOK")
     print(people)
     count = len(people)
@@ -381,14 +405,14 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
         t = t + timetext
         t = t+ locationtext
         msg.body(t)
-        with app.app_context():
-            mail.send(msg)
+        #with app.app_context():
+            #mail.send(msg)
         return 'Sent'
 
     if matched:
         locationtext = ""
         for entry in locations:
-            locationtext = locationtext + (locations[entry]/count) + " of people prefer " + entry + ". "
+            locationtext = locationtext + str(locations[entry]/count) + " of people prefer " + entry + ". "
         names = ""
         for person in people:
             if names == "":
@@ -410,10 +434,14 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
         t = t.replace('course', uniqueCourse)
         t = t.replace('day', day)
         timestring = ""
-        for x in timeblock: 
-            timestring += x +","
-        print(timeblock)
-        timestring = timestring[0: len(timestring)-1]
+        if len(timeblock) == 2 and timeblock[0] == timeblock[1]:
+            timestring = timeblock[0]
+        else:
+            timestring = timeblock[0]+"-"+timeblock[len(timeblock)-1]
+
+        #for x in timeblock: 
+         #   timestring += x +","
+        #timestring = timestring[0: len(timestring)-1]
         t = t.replace("time", timestring)
         t = t + locationtext
         print(names, uniqueCourse, day, timestring)
@@ -422,7 +450,7 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
         with app.app_context():
             mail.send(msg)
         return 'Sent'
-#Code for generating and confirming token taken from https://realpython.com/handling-email-confirmation-in-flask/#generate-confirmation-token
+# Code for generating and confirming token taken from https://realpython.com/handling-email-confirmation-in-flask/#generate-confirmation-token
 def generate_confirmation_token(email):
     serializer = URLSafeTimedSerializer('SECRET_KEY')
     return serializer.dumps(email, salt='SECURITY_PASSWORD_SALT')
@@ -472,10 +500,11 @@ def verify(email, firstname):
     
 def match(): 
     # Creates copy of preferences table called prefs to save preferences information
-  #  db.execute("SELECT * INTO prefs FROM preferences;")  
-   # db.execute("ALTER TABLE prefs ADD matched bit")
-    #db.execute("UPDATE prefs SET matched = ?", 0)
+    # db.execute("SELECT * INTO prefs FROM preferences;")  
+    # db.execute("ALTER TABLE prefs ADD matched bit")
+    # db.execute("UPDATE prefs SET matched = ?", 0)
     # Runs timematch on every unique course in the prefs table
+    # duplicates = {}
     uniqueCourses = db.execute("SELECT DISTINCT course FROM prefs;")
     for uniqueCourse in uniqueCourses: 
         for day in daysoftheweek:
@@ -529,7 +558,7 @@ def timematch(uniqueCourse, day):
             stackedTimelines[time_to_index[time]][1]= time
         
     stackedTimelines = sorted(stackedTimelines, key=lambda x: x[0], reverse = True)
-
+   
     # now stackedtimelines has the number of people who want a specific course at each time block 
     # https://careerkarma.com/blog/python-sort-a-dictionary-by-value/
     #sortedStackedTimelines = sorted(stackedTimelines.items(), key=lambda x: x[1], reverse=True)
@@ -539,9 +568,11 @@ def timematch(uniqueCourse, day):
     # stackedTimelinesValues = stackedTimelines.values()
 
     #https://www.kite.com/python/answers/how-to-sort-a-multidimensional-list-by-column-in-python
-    for key in range(len(stackedTimelines)):
+    key = 0 
+    duplicates = []
+    while key < len(stackedTimelines):
         max_value = stackedTimelines[key][0]
-        if max_value == 0: 
+        if max_value == 0 or max_value == 1: 
             break
         # finds 30 minute blocks with max people 
         # https://www.programiz.com/python-programming/methods/list/index
@@ -560,22 +591,23 @@ def timematch(uniqueCourse, day):
             am_timeblock.append(max_time)
         else: 
             pm_timeblock.append(max_time)
-        for left in range(time_to_index[max_time]-1, -1, -1):
-            key2 = index_to_time[left]
-            peopledict2 = db.execute("SELECT email FROM prefs WHERE course = ? AND times LIKE ? AND day = ?;", uniqueCourse, "%"+key2+"%", day)
-            people2 = []
-            for x in peopledict2: 
-                people2.append(x["email"]) 
+        #for left in range(time_to_index[max_time]-1, -1, -1):
+         #   key2 = index_to_time[left]
+          #  peopledict2 = db.execute("SELECT email FROM prefs WHERE course = ? AND times LIKE ? AND day = ?;", uniqueCourse, "%"+key2+"%", day)
+           # people2 = []
+            #for x in peopledict2: 
+             #   people2.append(x["email"]) 
             #https://thispointer.com/python-check-if-a-list-contains-all-the-elements-of-another-list/#:~:text=Check%20if%20list1%20contains%20all%20elements%20of%20list2%20using%20all()&text=Python%20all()%20function%20checks,if%20element%20exists%20in%20list1.
-            contained =  all(elem in people2  for elem in people)
-            if not contained:
-                break
-            else: 
-                 if key[len(key2)-2] == "am":
-                    am_timeblock.append(key2)
-                 else: 
-                    pm_timeblock.append(key2)
+           # contained =  all(elem in people2  for elem in people)
+           # if not contained:
+           #     break
+           # else: 
+             #    if key2[len(key2)-2] == "am":
+            #        am_timeblock.append(key2)
+            #     else: 
+            #        pm_timeblock.append(key2)
         max_index = time_to_index[max_time]
+        count = 0
         for right in range(max_index, len(stackedTimelines)):
             key2 = index_to_time[right]
             peopledict2 = db.execute("SELECT email FROM prefs WHERE course = ? AND times LIKE ? AND day = ?;", uniqueCourse, "%"+key2+"%", day)
@@ -587,6 +619,7 @@ def timematch(uniqueCourse, day):
             if not contained:
                 break
             else: 
+                 count += 1
                  if key2[len(key2)-2] == "am":
                     am_timeblock.append(key2)
                  else: 
@@ -594,7 +627,21 @@ def timematch(uniqueCourse, day):
         am_timeblock.sort()
         pm_timeblock.sort()
         timeblock = am_timeblock+pm_timeblock
-        grouped_people = grouper(uniqueCourse, timeblock, people, day)
+        #contained =  any(elem in people for elem in duplicates)
+        for person in people:
+            if person in duplicates:
+                break
+            if not person in duplicates:
+
+        #if not contained: 
+                grouper(uniqueCourse, timeblock, people, day)
+                for r in people: 
+                    duplicates.append(r)
+            print("DUPLICATES: ", duplicates)
+            print("COUNT: ", count)
+        key += 1
+        key += count
+        print("KEY: ", key)
     # Handle left over people
     
 
@@ -603,12 +650,18 @@ def timematch(uniqueCourse, day):
 def grouper(uniqueCourse, timeblock, emails, day):
     timestring = ""
     locationstring = ""
-    for time in timeblock: 
+    for i in range(1, len(timeblock)):
+        time = timeblock[i]
         timestring += time + ","
-    course_entries = db.execute("SELECT * FROM prefs WHERE course = ? and times LIKE ? AND day = ?", uniqueCourse, "%"+timestring+"%", day)
-    for course_entry in course_entries: 
-        locationstring += course_entry["locations"] + ","
+    timestring = timestring[0: len(timestring)-1]
+    course_entries = db.execute("SELECT * FROM prefs WHERE course = ? AND times LIKE ? AND day = ?", uniqueCourse, "%"+timestring+"%", day)
+    course_locations = db.execute("SELECT locations FROM prefs WHERE course = ? AND times LIKE ? AND day = ?", uniqueCourse, "%"+timestring+"%", day)
+    locationstring = ""
+    for x in course_locations: 
+        locationstring+=x["locations"]
     number_of_people = len(course_entries)
+    #if number_of_people == 1: 
+     #   matchemail(emails, locationstring, timeblock, day, uniqueCourse, False)
     if number_of_people <= 3:
         matchemail(emails, locationstring, timeblock, day, uniqueCourse, True)  
     elif number_of_people <=6 and number_of_people >=4:
@@ -626,10 +679,10 @@ def grouper(uniqueCourse, timeblock, emails, day):
                matchemail(emails[2:4], locationstring, timeblock, day, uniqueCourse, True)
            elif number_of_people == 5: 
                matchemail(emails[0:2], locationstring, timeblock, day, uniqueCourse, True)
-               matchemail(emails[3:5], locationstring, timeblock, day, uniqueCourse, True)
+               matchemail(emails[2:5], locationstring, timeblock, day, uniqueCourse, True)
            else: 
                matchemail(emails[0:3], locationstring, timeblock, day, uniqueCourse, True)
-               matchemail(emails[4:6], locationstring, timeblock, day, uniqueCourse, True)
+               matchemail(emails[3:6], locationstring, timeblock, day, uniqueCourse, True)
        else:
            matchemail(emails, locationstring, timeblock, day, uniqueCourse, True)
        db.execute("UPDATE prefs SET matched = 1 WHERE course = ? AND times LIKE ? AND day = ?", uniqueCourse, "%"+timestring+"%", day) 
@@ -737,7 +790,7 @@ def grouper(uniqueCourse, timeblock, emails, day):
 def sizeCount(course_entries, size):
     count = 0   
     for course_entry in course_entries: 
-        if course_entry["size"] == size: 
+        if course_entry["size"] == size:
             count += 1
     return count
 
