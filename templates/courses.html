@@ -1,0 +1,46 @@
+{% extends layout.html %}
+
+{% block title %}
+    Courses
+{% endblock %}
+
+{% blockmain %}
+    <!-- display title of page -->
+    <div class="col-sm-8 type1">
+        <h1>Courses</h1>
+    </div>
+
+    <!-- display list of resources for each course user is registered in -->
+    <div class="container-fluid">
+        {% for course in courses %}
+            <div class="section">
+                <h2>Course ID {{ course }}</h2>
+                <!-- list resource links -->
+                {% for resourse in resources %}
+                    <a href={{resourceLink}}>{{ resourceTitle }}</a>
+                {% endfor %}
+                <button id="add1">Add Resource</button>
+                <div id="addResource" style="display:none">
+                    <form action="/courses" method="post">
+                        <label for="resourceLink">Link to resource:</label>
+                        <input id="resourceLink" name="resourceLink" placeholder="Put Link Here" type="url">
+                        <label for="resourceTitle">Title of resource:</label>
+                        <input id="resourceTitle" name="resourceTitle" placeholder="Put Title Here" type="text">
+                        <button type="submit" id="add2">Add Resource</button>                   
+                    </form> 
+                </div>           
+            </div>
+            <script>
+                let resourceLink = document.getElementById('resourceLink').value;
+                let resourceTitle = document.getElementById('resourceTitle').value;
+                document.querySelector('#add1').addEventListener('click', function(){
+                    document.getElementById('addResource').style.display = 'block'
+                    document.getElementById('add1').style.display = 'none'
+                });
+                document.querySelector('#add2').addEventListener('click', function(){
+                    db.execute("INSERT INTO resources VALUES (?, ?, ?)", course, resourceLink, resourceTitle)
+                });
+            </script>
+        {% endfor %}
+    </div>
+{% endblock %}

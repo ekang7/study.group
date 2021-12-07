@@ -3,7 +3,7 @@
 import os
 import re
 from cs50 import SQL
-from flask import Flask, render_template, request, session, url_for, redirect
+from flask import Flask, render_template, request, session, url_for, redirect, flash
 from flask_mail import Mail, Message
 from string import Template
 from flask_session import Session
@@ -39,7 +39,9 @@ Session(app)
 # sets up users database 
 db = SQL("sqlite:///users.db")
 
+# List of days of the week 
 daysoftheweek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
 # dictionary that serves as a converter between times and indices 
 time_to_index = {
                     "12:00am": 0,
@@ -91,6 +93,58 @@ time_to_index = {
                     "11:00pm": 46, 
                     "11:30pm": 47
 } 
+
+index_to_time = {
+                    0: "12:00am",
+                    1: "12:30am",
+                    2: "1:00am",
+                    3: "1:30am",
+                    4: "2:00am", 
+                    5: "2:30am",
+                    6: "3:00am",
+                    7: "3:30am",
+                    8: "4:00am",
+                    9: "4:30am",
+                    10: "5:00am",
+                    11: "5:30am",
+                    12: "6:00am",
+                    13: "6:30am",
+                    14: "7:00am",
+                    15: "7:30am",
+                    16: "8:00am",
+                    17: "8:30am",
+                    18: "9:00am",
+                    19: "9:30am",
+                    20: "10:00am",
+                    21: "10:30am",
+                    22: "11:00am",
+                    23: "11:30am",
+                    24: "12:00pm",
+                    25: "12:30pm",
+                    26: "1:00pm",
+                    27: "1:30pm",
+                    28: "2:00pm",
+                    29: "2:30pm",
+                    30: "3:00pm",
+                    31: "3:30pm",
+                    32: "4:00pm",
+                    33: "4:30pm",
+                    34: "5:00pm",
+                    35: "5:30pm",
+                    36: "6:00pm",
+                    37: "6:30pm",
+                    38: "7:00pm",
+                    39: "7:30pm",
+                    40: "8:00pm",
+                    41: "8:30pm",
+                    42: "9:00pm",
+                    43: "9:30pm",
+                    44: "10:00pm",
+                    45: "10:30pm",
+                    46: "11:00pm",
+                    47: "11:30pm"
+} 
+
 
 # message object mapped to a particular URL ‘/’
 # recipients = a list of strings of the group members' emails 
@@ -152,7 +206,9 @@ def index():
         if len(rows) != 1 or not check_password_hash(rows[0]["password"], request.form.get("password")):
             errormessage = "Incorrect login"
             return render_template("login.html", errormessage = errormessage)
-        
+        #if rows[0]['confirmed'] = 0:
+            #errormessage = "Not verified"
+            #return render_template("login.html", errormessage = errormessage)
         # remember user
         session["user_id"] = rows[0]["email"]
         # redirect to home page
@@ -160,6 +216,33 @@ def index():
 
     else:
         return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    # Defined using the Finance problem set
+    """Log user out"""
+
+    # Forget any user_id
+    session.clear()
+
+    # Redirect user to login form
+    return redirect("/")
+'''@app.route("/courses", methods=["GET", "POST"])
+def courses(): 
+    courses = db.execute("SELECT DISTINCT course FROM prefs WHERE email = ?", session["user_id"])
+    if request.method == "POST":
+        course = 
+        resourcelink = request.form.get("resourceLink")
+        resourcetitle = request.form.get("resourceTitle")
+        db.execute("INSERT INTO resources (course, resourcelink, resourcetitle) VALUES (?, ?, ?)", course, resourcelink, resourcetitle
+    else:
+        resourcelist = []
+        resources = {}
+        for course in courses
+            resource[course] = resourcelist
+
+        return render_template("courses.html", courses = courses)'''
+        
 
 
 @app.route("/")
@@ -186,7 +269,6 @@ def prefs():
          #   coursesprefs[counter]["course"] = 
 
     if request.method == "POST":
-        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         #Assume that course is the course they enter into the form
         #Assume that size is the size preference they enter into the form
         #Assume that timelist is the comma separated list of times that we create from the times they enter into the form
@@ -304,12 +386,14 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
         locationtext = ""
         for entry in locations:
             locationtext = locationtext + locations[entry]/count + " of people prefer " + entry + ". "
-
+        names = ""
         for person in people:
             if names == "":
-                names = db.execute("SELECT firstname from users WHERE email = ?", person)['firstname']
+                table = db.execute("SELECT firstname from users WHERE email = ?", person)
+                names=table[0]['firstname']
             else:
-                names = names + ", " + db.execute("SELECT firstname from users WHERE email = ?", person)['firstname']
+                table = db.execute("SELECT firstname from users WHERE email = ?", person)
+                names = names + ", " + table[0]['firstname']
 
         msg = Message(
                     'You have been matched!',
@@ -318,12 +402,17 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
                     )
                     #string formatting in python: https://realpython.com/python-string-formatting/
         
-        t = Template('Hello, $name. We wanted to let you know that you have been matched! Your group for $course will meet on $day at $time.')
+        t = 'Hello, $name. We wanted to let you know that you have been matched! Your group for $course will meet on $day at $time.'
         t.replace('$name', names)
         t.replace('$course', uniqueCourse)
         t.replace('$day', day)
-        t.replace('$time', timeblock)
+        timestring = ""
+        for x in timeblock: 
+            timestring += x +","
+        timestring = timestring[0: len(timestring)-1]
+        t.replace('$time', timestring)
         t = t + locationtext
+        t = Template(t)
         msg.body(t)
         mail.send(msg)
         return 'Sent'
@@ -344,6 +433,21 @@ def confirm_token(token, expiration=3600):
     except:
         return False
     return email
+
+@app.route('/confirm/<token>')
+@login_required
+def confirm_email(token):
+    try:
+        email = confirm_token(token)
+    except:
+        flash('The confirmation link is invalid or has expired.', 'danger')
+    confirmvalue = db.execute("SELECT confirmed FROM users WHERE email = ?", email)
+    if confirmvalue[0]['confirmed'] == 1:
+        flash('Account already confirmed. Please login.', 'success')
+    else:
+        db.execute("UPDATE users SET confirmed = ? where email = ?", 1, email)
+        flash('You have confirmed your account. Thanks!', 'success')
+    return redirect(url_for('/'))
 
 def verify(email, firstname): 
     token = generate_confirmation_token(email)
@@ -397,7 +501,14 @@ def timematch(uniqueCourse, day):
     # stackedTimelines stores how many people are available at each time represented by each index of 
     # stackedTimelines 
     # assume 
-    stackedTimelines = [0] * 48
+    #https://stackoverflow.com/questions/57594419/2d-array-in-python-changes-the-whole-row-when-i-only-want-to-change-1-itemis-th
+    stackedTimelines = []
+    for x in range(0,48):
+            row = []
+            for x in range(0,2):
+                row.append(0)
+            stackedTimelines.append(row)
+   
     timelines = db.execute("SELECT times FROM prefs WHERE course = ? AND day = ?", uniqueCourse, day)
     #https://www.kite.com/python/answers/how-to-convert-a-comma-separated-string-to-a-list-in-python#:~:text=Use%20str.,separated%20string%20into%20a%20list.
     for timeline in timelines: 
@@ -408,18 +519,22 @@ def timematch(uniqueCourse, day):
         filteredtimelist = filter(lambda x: x != "", timelist)
         timelist = list(filteredtimelist)
         for time in timelist: 
-            stackedTimelines[time_to_index[time]] += 1
-
+            stackedTimelines[time_to_index[time]][0] += 1 #number of people
+            stackedTimelines[time_to_index[time]][1]= time
+        
+    stackedTimelines = sorted(stackedTimelines, key=lambda x: x[0], reverse = True)
 
     # now stackedtimelines has the number of people who want a specific course at each time block 
-    # https://careerkarma.com/blog/python-sort-a-dictionary-by-value/   
-    sortedStackedTimelines = sorted(stackedTimelines.items(), key=lambda x: x[1], reverse=True)
+    # https://careerkarma.com/blog/python-sort-a-dictionary-by-value/
+    #sortedStackedTimelines = sorted(stackedTimelines.items(), key=lambda x: x[1], reverse=True)
     # Now stackedTimelines is sorted according by popularity of time and stored as a dictionary in sortedStackedTimelines
     # https://realpython.com/iterate-through-dictionary-python/
-    stackedTimelinesKeys = stackedTimelines.keys()
-    stackedTimelinesValues = stackedTimelines.values()
-    for key in sortedStackedTimelines: 
-        max_value = sortedStackedTimelines[key]
+    # stackedTimelinesKeys = stackedTimelines.keys()
+    # stackedTimelinesValues = stackedTimelines.values()
+
+    #https://www.kite.com/python/answers/how-to-sort-a-multidimensional-list-by-column-in-python
+    for key in range(len(stackedTimelines)):
+        max_value = stackedTimelines[key][0]
         if max_value == 0: 
             break
         # finds 30 minute blocks with max people 
@@ -427,21 +542,21 @@ def timematch(uniqueCourse, day):
         timeblock = []
         am_timeblock = []
         pm_timeblock = []
-        max_index = stackedTimelinesKeys.index(key)
-        peopledict = db.execute("SELECT email FROM prefs WHERE course = ? AND times LIKE %?% AND day = ?;", uniqueCourse, key, day)
+        max_time = stackedTimelines[key][1]
+        peopledict = db.execute("SELECT email FROM prefs WHERE course = ? AND times LIKE ? AND day = ?;", uniqueCourse, "%"+max_time+"%", day)
         people = []
         for x in peopledict: 
             people.append(x["email"])
         # now we have the list of people who the most popular 30 minute block works with
         # we wil now look to before and after this 30 minute block to see if the same people are available for a longer
         # block of time 
-        if key[len(key)-2] == "am":
-            am_timeblock.append(key)
+        if max_time[len(max_time)-2] == "am":
+            am_timeblock.append(max_time)
         else: 
-            pm_timeblock.append(key)
-        for left in range(max_index-1, -1, -1):
-            key2 = stackedTimelinesKeys[left]
-            peopledict2 = db.execute("SELECT email FROM prefs WHERE course = ? AND times LIKE %?% AND day = ?;", uniqueCourse, key2, day)
+            pm_timeblock.append(max_time)
+        for left in range(time_to_index[max_time]-1, -1, -1):
+            key2 = index_to_time[left]
+            peopledict2 = db.execute("SELECT email FROM prefs WHERE course = ? AND times LIKE ? AND day = ?;", uniqueCourse, "%"+key2+"%", day)
             people2 = []
             for x in peopledict2: 
                 people2.append(x["email"]) 
@@ -454,9 +569,10 @@ def timematch(uniqueCourse, day):
                     am_timeblock.append(key2)
                  else: 
                     pm_timeblock.append(key2)
-        for right in range(max_index, len(stackedTimelinesKeys)):
-            key2 = stackedTimelinesKeys[right]
-            peopledict2 = db.execute("SELECT email FROM prefs WHERE course = ? AND times LIKE %?% AND day = ?;", uniqueCourse, key2, day)
+        max_index = time_to_index[max_time]
+        for right in range(max_index, len(stackedTimelines)):
+            key2 = index_to_time[right]
+            peopledict2 = db.execute("SELECT email FROM prefs WHERE course = ? AND times LIKE ? AND day = ?;", uniqueCourse, "%"+key2+"%", day)
             people2 = []
             for x in peopledict2: 
                 people2.append(x["email"]) 
@@ -465,7 +581,7 @@ def timematch(uniqueCourse, day):
             if not contained:
                 break
             else: 
-                 if key[len(key2)-2] == "am":
+                 if key2[len(key2)-2] == "am":
                     am_timeblock.append(key2)
                  else: 
                     pm_timeblock.append(key2)
@@ -483,7 +599,7 @@ def grouper(uniqueCourse, timeblock, emails, day):
     locationstring = ""
     for time in timeblock: 
         timestring += time + ","
-    course_entries = db.execute("SELECT * FROM prefs WHERE course = ? and times LIKE %?% AND day = ?", uniqueCourse, timestring, day)
+    course_entries = db.execute("SELECT * FROM prefs WHERE course = ? and times LIKE ? AND day = ?", uniqueCourse, "%"+timestring+"%", day)
     for course_entry in course_entries: 
         locationstring += course_entry["locations"] + ","
     number_of_people = len(course_entries)
