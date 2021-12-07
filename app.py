@@ -1,4 +1,4 @@
-# Implements a registration form, confirming registration via email
+# Introducing...study.group!
 
 import os
 import re
@@ -11,16 +11,15 @@ from login import login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
-# template for email code from https://www.geeksforgeeks.org/sending-emails-using-api-in-flask-mail/
-#gmail:  study.groupmatching@gmail.com
-#password: 7pKsm'v~.T=xTe9/]
-mail = Mail(app) # instantiate the mail class
+# Template for email code from https://www.geeksforgeeks.org/sending-emails-using-api-in-flask-mail/
+# Instantiates the mail class
+mail = Mail(app) 
 
 
 # Guarantees templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-# configuration of mail
+# Configuration of mail
 app.config['MAIL_SERVER']='smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USERNAME'] = 'study.groupmatching@gmail.com'
@@ -35,18 +34,13 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-# sets up users database 
+# Sets up users database 
 db = SQL("sqlite:///users.db")
 
 # List of days of the week 
 daysoftheweek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
-# course = [people emails]
-'''duplicates = {
-    
-}'''
-
-# dictionary that serves as a converter between times and indices 
+# Dictionary that serves as a converter between times and indices 
 time_to_index = {
                     "12:00am": 0,
                     "12:30am": 1,
@@ -98,6 +92,7 @@ time_to_index = {
                     "11:30pm": 47
 } 
 
+# The same thing, but in reverse!
 index_to_time = {
                     0: "12:00am",
                     1: "12:30am",
@@ -149,44 +144,39 @@ index_to_time = {
                     47: "11:30pm"
 } 
 
-
-# message object mapped to a particular URL ‘/’
-# recipients = a list of strings of the group members' emails 
-# course = course name, day = the day the study group will meet
-# time = the time the study group will meet 
-# location = a dictionary of the different locations that members of 
-# the study group prefer, each key being a different location and 
-# each value being the corresponding percentage of study group members
-# who prefer that location
-
-#Creates a password salt
-SECURITY_PASSWORD_SALT = 'v6u9-DwrC@BL'
-
 @app.route("/register", methods = ["GET", "POST"])
 def register(): 
     if request.method == "POST":
+        # Error is sent to the template to show what error may pop up when registering (its default value is "" signifying no error)
         error = ""
+        # Take information entered by the user during registration and store as variables
         email = request.form.get("email")
         firstname = request.form.get("firstName")
         lastname = request.form.get("lastName")
         password = request.form.get("password")
         passwordconfirm = request.form.get("confirmation")
+        # Ensure that all fields are filled out
         if not email or not password or not firstname or not lastname:
             error = "All fields must be filled out"
             return render_template("register.html",error=error)
         else:
+            # Check if there is an account already associated with the email
             if len(db.execute("SELECT * FROM users WHERE email = ?", email)) > 0:
                 error = "There is an account associated with this email"
                 return render_template("register.html",error=error)
             else:
+                # Make sure that the password is the same as their password confirmation
                 if password != passwordconfirm:
                     error = "Please make sure your confirmation matches your password"
                     return render_template("register.html",error=error)
                 else:
+                    # Store the user's information and a hash of their password in the users database 
                     passwordhash = generate_password_hash(password)
                     db.execute("INSERT INTO users (email, password, firstname, lastname) VALUES(?, ?, ?, ?)", email, passwordhash, firstname, lastname)
+                    # Once they have successfully registered, welcome the user and direct them to login!
                     return render_template("login.html", errormessage = "WELCOME!")
     else:
+        # Return the register page
         return render_template("register.html")
 
 
@@ -195,32 +185,33 @@ def index():
     session.clear()
 
     if request.method == "POST":
-        # check if email was submitted
+        # Check if email was submitted
         if not request.form.get("email"):
             return render_template("login.html", errormessage = "Please enter an email!")
-        # check if password was submitted
+        # Check if password was submitted
         if not request.form.get("password"):
             return render_template("login.html", errormessage = "Please enter a password!")
          
-        # query for the given email from user table
+        # Query for the given email from user table
         rows = db.execute("SELECT * FROM users WHERE email = ?", request.form.get("email"))
-        # check if email is a user and password is correct
+        # Check if email is a user and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["password"], request.form.get("password")):
             errormessage = "Incorrect login"
             return render_template("login.html", errormessage = errormessage)
 
-        # remember user
+        # Remember user
         session["user_id"] = rows[0]["email"]
-        # redirect to home page
+        # Redirect to home page
         return redirect("/")
 
     else:
+        # Return the login page
         return render_template("login.html")
 
 @app.route("/logout")
 @login_required
 def logout():
-    # Defined using the Finance problem set
+    # Previously defined in the Finance problem set
     """Log user out"""
 
     # Forget any user_id
@@ -233,16 +224,22 @@ def logout():
 @login_required
 def courses(): 
     if request.method == "POST":
+        # Take the course, resourcelink, and resourcetitle for the resource the user is submitting
         course = request.form.get('resourceCourse')
         resourcelink = request.form.get("resourceLink")
         resourcetitle = request.form.get("resourceTitle")
+        print(course)
+        print(resourcelink)
+        print(resourcetitle)
+        # Insert values into the courses table
         db.execute("INSERT INTO courses (course, url, title) VALUES (?, ?, ?)", course, resourcelink, resourcetitle)
+        # Find all the courses that the current logged in user has submitted preferences for
         coursesDict = db.execute("SELECT DISTINCT course FROM prefs WHERE email = ?", session["user_id"])
         courses = []
         for courseDict in coursesDict: 
             courses.append(courseDict["course"])
-        resourcelist = []
         resources = {} 
+        # Find all the resources associated with the courses the user has submitted preferences for
         for course in courses:
            tempDict = db.execute("SELECT title, url FROM courses WHERE course = ?;", course)
            for temp in tempDict:
@@ -250,15 +247,16 @@ def courses():
                     resources[course] = resources[course] + [temp["title"], temp["url"]]
                 except: 
                     resources[course] = [temp["title"], temp["url"]]
-        print (resources)
+        # Return the courses page with the list of courses the user has submitted preferences for, and the corresponding resources
         return render_template("courses.html", courses = courses, resources = resources)
     else: 
+        # Find all the courses that the current logged in user has submitted preferences for
         coursesDict = db.execute("SELECT DISTINCT course FROM prefs WHERE email = ?", session["user_id"])
         courses = []
         for courseDict in coursesDict: 
             courses.append(courseDict["course"])
-        resourcelist = []
         resources = {} 
+        # Find all the resources associated with the courses the user has submitted preferences for
         for course in courses:
             tempDict = db.execute("SELECT title, url FROM courses WHERE course = ?;", course)
             for temp in tempDict:
@@ -266,11 +264,10 @@ def courses():
                     resources[course] = resources[course] + [temp["title"], temp["url"]]
                 except: 
                     resources[course] = [temp["title"], temp["url"]]
-        print(resources)
+         # Return the courses page with the list of courses the user has submitted preferences for, and the corresponding resources
         return render_template("courses.html", courses = courses, resources = resources) 
-        
 
-
+# Set the homepage for our website to "main.html"
 @app.route("/")
 def home(): 
     return render_template("main.html")#f courses():s():
@@ -278,35 +275,26 @@ def home():
 @app.route("/prefs", methods=["GET", "POST"])
 @login_required
 def prefs(): 
+    # List of locations that we want people to be able to select from when submitting preferences
     locations = ["Cabot Library", "Dorm Room", "Lamont Library", "Smith Center", "Widener Library"]
-    userprefs = db.execute("SELECT * FROM prefs WHERE email = ? ", session["user_id"])
-    # [
-    #  [courses]
-    # [timeDict]
-    # [groupsizes]
-    # [locations]
-    # ]
-    #if userprefs: 
-        #courses = a list of all courses, timeDict, locations, group size
-     #   coursesprefs = []
-      #  counter = 0 
-       # for x in userprefs: 
-        #    coursesprefs.append({})
-         #   coursesprefs[counter]["course"] = 
-
     if request.method == "POST":
-        #Assume that course is the course they enter into the form
-        #Assume that size is the size preference they enter into the form
-        #Assume that timelist is the comma separated list of times that we create from the times they enter into the form
-        #Assume that locationlist is the comma separrated list of locations that we create from the locations they enter into the form
-        #the timelist should be times from least to greatest, CHECK IF THIS IS AUTOMATICALLY DONE 
+        error = ""
+        # Assume that course is the course they enter into the form
+        # Assume that size is the size preference they enter into the form
+        # Assume that locationlist is the single location they enter into the form 
         course = request.form.get("course")
+        # Check that course as submitted is an integer with six digits
+        if course % 1 != 0 or len(str(course))!=6:
+            error = "Make sure you are submitting a six number course ID, not the course name!"
+            return render_template("prefs.html", locations = locations, daysoftheweek = daysoftheweek, time_to_index = time_to_index, error = error)
+        # Obtain email from the session id for the currently signed in user
         email = session["user_id"]
-        #day = request.form.get("day")
         size = request.form.get("size")
         locationlist = request.form.get("location")
+        # Create a time dictionary relating day of the week with corresponding times they meet
         timeDict = {}
-        #https://stackoverflow.com/questions/12502646/access-multiselect-form-field-in-flask
+        # We looked at this resource: https://stackoverflow.com/questions/12502646/access-multiselect-form-field-in-flask
+        # Find all the times the user submitted in their preferences form with the corresponding days they want to meet on at those times
         for x in daysoftheweek: 
             timeDict[x] = request.form.getlist(x)
             timestring = ""
@@ -314,38 +302,27 @@ def prefs():
                 timestring += y +","
             timestring = timestring[0:len(timestring)-1]
             timeDict[x] = timestring
-            print(timeDict[x])
             table = db.execute("SELECT course FROM prefs WHERE email = ? AND course = ? AND day = ?", email, course, x)
             try:
+                # If the entry exists in the table (the user has previously submitted a preference form for that course on that day); update the existing entry
                 if len(table[0]['course']) > 0:
                     db.execute("UPDATE prefs SET size = ?, times = ?, locations = ? WHERE email = ? AND course = ? AND day = ?", size, timeDict[x], locationlist, email, course, x)
+               # If the entry in the table is blank (the user has not previously submitted a preference form for that course on that day); create a new entry
                 else:
                     db.execute("INSERT INTO prefs (email, course, size, times, locations, day) VALUES (?, ?, ?, ?, ?, ?)", email, course, size, timeDict[x], locationlist, x)
+           # If not able to open the entry in the table (the user has not previously submitted a preference form for that course on that day); create a new entry
             except:
                 db.execute("INSERT INTO prefs (email, course, size, times, locations, day) VALUES (?, ?, ?, ?, ?, ?)", email, course, size, timeDict[x], locationlist, x)
-        
-        #Matching algorithm: 
-        #courses = db.execute("SELECT DISTINCT course FROM prefs")
-        #for course in courses: 
-            #first course is variable name, second course is in for loop, third course refers to course entry in table
-            #course = course["course"]
-            #same_courses = db.execute("SELECT * FROM prefs WHERE course = ?", course)
-            
-            
-            
-        
-        #location = request.form.get("location")
+        # Format the prefs html, sending the list of locations, days of week, and times
         return render_template("prefs.html", locations = locations, daysoftheweek = daysoftheweek, time_to_index = time_to_index)
 
     else:
-       
+        # Format the prefs html, sending the list of locations, days of week, and times
         return render_template("prefs.html", locations=locations, daysoftheweek = daysoftheweek, time_to_index = time_to_index)
 
 def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
-    timestring = ""
-    for time in timeblock: 
-        timestring+=time+","
-    #https://www.programiz.com/python-programming/methods/string/count'''
+    # We looked at this resource to count values: https://www.programiz.com/python-programming/methods/string/count'''
+    # Create a dictionary whose keys are the locations and whose initial values are zero
     places = {
                 "Cabot Library": 0, 
                 "Dorm Room": 0, 
@@ -353,18 +330,18 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
                 "Smith Center": 0, 
                 "Widener Library": 0
             }
+    # Check how many times each location appears in the list "locations" that is passed in through grouper
     for key in places: 
         places[key] = locations.count(key)
+    # Rename the places dictionary as locations
     locations = places 
-    #people as a list
-    #locations as a dictionary
-    #uniquecourse as a integer valiue
-    #matched as a boolean
-    # day is one day because we are only matching for one day per week
-    # configuration of mail
-    '''print("UHH", duplicates)'''
-    #duplicates[uniqueCourse] = people
-    #noduplicates = True
+    # People is a list of emails for the people matched in the group
+    # Locations is a dictionary whose keys are the list of locations and values are how many people want that location 
+    # UniqueCourse is an integer valiue
+    # Matched will be a boolean telling whether the group of people are matched or unmatched
+    # Day is a single day because we are only matching for one day for the group
+    
+    # Find how many people are in the group
     count = len(people)
     if not matched:
         timesdictSunday={}
@@ -374,31 +351,35 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
         timesdictThursday = {}
         timesdictFriday = {}
         timesdictSaturday = {}
+        # Create a list of dictionaries, where each dictionary corresponds to a different day of the week
         fulllistoftimes =[timesdictSunday,timesdictMonday, timesdictTuesday, timesdictWednesday, timesdictThursday, timesdictFriday, timesdictSaturday]
         daycount = 0
         for aday in daysoftheweek:
+            # Indexes fulllistoftimes to temporarily assign timesdict to the corresponding dictionary in fulllistoftimes
             timesdict = fulllistoftimes[daycount]
-            for person in people: 
+            for person in people:
+                # Find all the preferred times for all the people in this group on the specific day 
                 timetable = db.execute("SELECT times FROM prefs WHERE email LIKE ? AND course = ? AND day = ?", person, uniqueCourse, aday)
                 timelist = timetable['times'].split(",")
+                # Count how many people in the group prefer each time on that day
                 for entry in timelist:
                     if timesdict.has_key(entry):
                         timesdict[entry] = timesdict[entry] + 1
                     else:
                         timesdict[entry] = 1
-
-            for entry in timesdict:
-                timesdict[entry] = timesdict[entry]/count
             daycount = daycount + 1
-        timetext = ""
+       # Create custom timetext for unmatched people, to go through the dictionary and let them know how many people prefer each time each day
+        timetext = " Of people who were unmatched, "
         for x in range(7):
             timesdict = fulllistoftimes[x]
             for entry in timesdict:
                 if timesdict.has_key(entry):
-                    timetext = timetext + timetext[entry] + " of people prefer " + entry + " on " + daysoftheweek[x] + ". "
-        locationtext = " Of people who plan to meet at this time (whether in your group or not): "
+                    timetext = timetext + timetext[entry] + " people prefer " + entry + " on " + daysoftheweek[x] + ". "
+        # Create custom locationtext for unmatched people, to go through the dictionary of locations and let them know how many people prefer each location
+        locationtext = " Of people who were unmatched: "
         for entry in locations:
             locationtext = locationtext + " "+ str(locations[entry]) + " people prefer " + entry + "."
+        # Create list of firstnames to address in the email, pulling it using their emails
         names = ""
         for person in people:
             if names == "":
@@ -406,29 +387,31 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
             else:
                 names = names + ", " + db.execute("SELECT firstname from users WHERE email = ?", person)['firstname']
 
-        #msg = Message(
-         #           'An Update on Your Study Group!',
-          #          sender ='study.groupmatching@gmail.com',
-                    #Problem: Recipients can see all other recipients (not BCC)
-                    #solution: https://stackoverflow.com/questions/1546367/python-how-to-send-mail-with-to-cc-and-bcc
-           #         recipients = people
-            #        )
-                    #string formatting in python: https://realpython.com/python-string-formatting/
+        msg = Message(
+                    'An Update on Your Study Group:',
+                    sender ='study.groupmatching@gmail.com',
+                    recipients = people
+                    )
+                    # String formatting in python: https://realpython.com/python-string-formatting/
         
+        # Create sample email to send to unmatched people, which is filled in with the appropriate names, course, timetext, and locationtext
         t = 'Hello, $name. Unfortunately, we were not able to find a perfect match for you for $course. Nevertheless, we are sending a list of preferred times and locations for other people in your class who need a group: '
-        t.replace('$name', names)
-        t.replace('$course', uniqueCourse)
+        t = t.replace('$name', names)
+        t = t.replace('$course', uniqueCourse)
         t = t + timetext
         t = t+ locationtext
-        #msg.body(t)
-        #with app.app_context():
-            #mail.send(msg)
+        print(t)
+        msg.body = t
+        with app.app_context():
+           mail.send(msg)
         return 'Sent'
 
     if matched:
+        # Convert locations dictionary into a string for matched people of where people at that time in that course prefer to meet
         locationtext = " Of people who plan to meet at this time (whether in your group or not): \n"
         for entry in locations:
             locationtext = locationtext + " "+ entry + ": "+str(locations[entry]) + "\n"
+        # Go through all the emails of the matched people and pull their first names using the users database
         names = ""
         for person in people:
             if names == "":
@@ -438,42 +421,33 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
                 table = db.execute("SELECT firstname from users WHERE email = ?", person)
                 names = names + ", " + table[0]['firstname']
 
-        #msg = Message(
-         #           'You have been matched!',
-          #          sender ='study.groupmatching@gmail.com',
-           #         recipients = people
-            #        )
-                    #string formatting in python: https://realpython.com/python-string-formatting/
-        
+        msg = Message(
+                    'You have been matched!',
+                    sender ='study.groupmatching@gmail.com',
+                    recipients = people
+                    )
+                    # String formatting in python: https://realpython.com/python-string-formatting/
+        # Formatted email customized to the names of the people in the group, their course, the day they meet, the time they meet, and locations people prefer
         t = 'Hello, name. We wanted to let you know that you have been matched! Your group for course will meet on day at time.'
         t = t.replace('name', names)
         t = t.replace('course', uniqueCourse)
         t = t.replace('day', day)
+        # Converts the list timeblock into a string timestring which goes from first index to last index separated by a dash (10:00 AM, 10:30 AM, 11:00 AM becomes 10:00 AM-11:00 AM)
         timestring = ""
         if len(timeblock) == 2 and timeblock[0] == timeblock[1]:
             timestring = timeblock[0]
         else:
             timestring = timeblock[0]+"-"+timeblock[len(timeblock)-1]
-
-        #for x in timeblock: 
-         #   timestring += x +","
-        #timestring = timestring[0: len(timestring)-1]
         t = t.replace("time", timestring)
         t = t + locationtext
-        print(names, uniqueCourse, day, timestring)
         print(t)
-       # msg.body = t
-        #with app.app_context():
-         #   mail.send(msg)
+        msg.body = t
+        with app.app_context():
+           mail.send(msg)
         return 'Sent'
 
 def match(): 
-    # Creates copy of preferences table called prefs to save preferences information
-    # db.execute("SELECT * INTO prefs FROM preferences;")  
-    # db.execute("ALTER TABLE prefs ADD matched bit")
-    # db.execute("UPDATE prefs SET matched = ?", 0)
     # Runs timematch on every unique course in the prefs table
-    # duplicates = {}
     uniqueCourses = db.execute("SELECT DISTINCT course FROM prefs;")
     for uniqueCourse in uniqueCourses: 
         for day in daysoftheweek:
@@ -500,12 +474,12 @@ def match():
                         locations[locationPref] = locations[locationPref] + 1
                 matchemail(people, locations, None, None, uniqueCourse["course"], 0)
 
-# prereq = the sorting has already been filtered by course 
+# Prrereq = the sorting has already been filtered by course 
 def timematch(uniqueCourse, day): 
     # stackedTimelines stores how many people are available at each time represented by each index of 
     # stackedTimelines 
     # assume 
-    #https://stackoverflow.com/questions/57594419/2d-array-in-python-changes-the-whole-row-when-i-only-want-to-change-1-itemis-th
+    # https://stackoverflow.com/questions/57594419/2d-array-in-python-changes-the-whole-row-when-i-only-want-to-change-1-itemis-th
     stackedTimelines = []
     for x in range(0,48):
             row = []
@@ -528,7 +502,7 @@ def timematch(uniqueCourse, day):
         
     stackedTimelines = sorted(stackedTimelines, key=lambda x: x[0], reverse = True)
    
-    # now stackedtimelines has the number of people who want a specific course at each time block 
+    # Now stackedtimelines has the number of people who want a specific course at each time block 
     # https://careerkarma.com/blog/python-sort-a-dictionary-by-value/
     #sortedStackedTimelines = sorted(stackedTimelines.items(), key=lambda x: x[1], reverse=True)
     # Now stackedTimelines is sorted according by popularity of time and stored as a dictionary in sortedStackedTimelines
@@ -560,21 +534,6 @@ def timematch(uniqueCourse, day):
             am_timeblock.append(max_time)
         else: 
             pm_timeblock.append(max_time)
-        #for left in range(time_to_index[max_time]-1, -1, -1):
-         #   key2 = index_to_time[left]
-          #  peopledict2 = db.execute("SELECT email FROM prefs WHERE course = ? AND times LIKE ? AND day = ?;", uniqueCourse, "%"+key2+"%", day)
-           # people2 = []
-            #for x in peopledict2: 
-             #   people2.append(x["email"]) 
-            #https://thispointer.com/python-check-if-a-list-contains-all-the-elements-of-another-list/#:~:text=Check%20if%20list1%20contains%20all%20elements%20of%20list2%20using%20all()&text=Python%20all()%20function%20checks,if%20element%20exists%20in%20list1.
-           # contained =  all(elem in people2  for elem in people)
-           # if not contained:
-           #     break
-           # else: 
-             #    if key2[len(key2)-2] == "am":
-            #        am_timeblock.append(key2)
-            #     else: 
-            #        pm_timeblock.append(key2)
         max_index = time_to_index[max_time]
         count = 0
         for right in range(max_index, len(stackedTimelines)):
@@ -627,10 +586,10 @@ def grouper(uniqueCourse, timeblock, emails, day):
         locationstring+=x["locations"]
    
     number_of_people = len(course_entries)
-    #if number_of_people == 1: 
-     #   matchemail(emails, locationstring, timeblock, day, uniqueCourse, False)
+    # If there are less than 3 people with the matching time, they are automatically put into a small group together
     if number_of_people <= 3:
         matchemail(emails, locationstring, timeblock, day, uniqueCourse, True)  
+    # If there are 4-6 people with the same matching time, then if there are more people who prefer small group than large, we make two small groups
     elif number_of_people <=6 and number_of_people >=4:
        large = sizeCount(course_entries, "l")
        medium = sizeCount(course_entries, "m")
@@ -651,38 +610,40 @@ def grouper(uniqueCourse, timeblock, emails, day):
                matchemail(emails[0:3], locationstring, timeblock, day, uniqueCourse, True)
                matchemail(emails[3:6], locationstring, timeblock, day, uniqueCourse, True)
        else:
+           # If the amount of people who prefer small group is not the majority, everyone is placed together as a medium group
            matchemail(emails, locationstring, timeblock, day, uniqueCourse, True) 
-    else: # 7+ people
+    else: # 7+ people who are in the same timeblock
        large = sizeCount(course_entries, "l")
        medium = sizeCount(course_entries, "m")
        small = number_of_people - large - medium
        large_people_dict = db.execute("SELECT email FROM prefs WHERE course = ? AND timeblock LIKE ? AND day = ? AND size = ?", uniqueCourse, "%"+timeblock+"%", day, "l")
        large_people = []
+       # Creates a list of the emails of people in the same timeblock who prefer large groups
        for t in large_people_dict: 
            large_people.append(large_people_dict["email"])
        medium_people_dict = db.execute("SELECT email FROM prefs WHERE course = ? AND timeblock LIKE ? AND day = ? AND size = ?", uniqueCourse, "%"+timeblock+"%", day, "m")
        medium_people = []
+       # Creates a list of the emails of people in the same timeblock who prefer medium groups
        for t in medium_people_dict: 
            medium_people.append(medium_people_dict["email"])
        small_people_dict = db.execute("SELECT email FROM prefs WHERE course = ? AND timeblock LIKE ? AND day = ? AND size = ?", uniqueCourse, "%"+timeblock+"%", day, "s")
        small_people = []
+       # Creates a list of the emails of people in the same timeblock who prefer large groups
        for t in small_people_dict:
            small_people.append(small_people_dict["email"])
        if small == 1:
+           # If there is only one person who prefers small, that isn't enough to form a small group so we move them to preferring medium
             medium = medium + small
             small = 0
-            #change the person's categorization in the table to medium
-            #db.execute("UPDATE prefs SET size = ? WHERE course = ? AND size = ? AND day = ? AND times LIKE %?%;","m", uniqueCourse, "s", day, timestring)
             medium_people.append(small_people.pop())
        s = small
-
+       # We want to ensure that there are at least 4 people in the medium group, so we group as many people who prefer small into small group as possible, while ensuring at least four people are in the medium group
        if number_of_people - s < 4:
             s = number_of_people - 4
        smallbutnots = small - s
        medium = medium + smallbutnots
        for x in range(smallbutnots):
            medium_people.append(small_people.pop())
-      # db.execute("UPDATE prefs SET size = ? WHERE course = ? AND size = ? AND day = ? AND times LIKE %?%;")
        remainder = s % 3
        if remainder == 0: 
        # all groups of 3
@@ -707,8 +668,6 @@ def grouper(uniqueCourse, timeblock, emails, day):
             large = 0
             for x in large: 
                 medium_people.append(large_people.pop())
-            #change the large people's categorization to medium
-            #db.execute("UPDATE prefs SET size = ? WHERE course = ? AND size = ? AND day = ? AND times LIKE %?%;", "m", uniqueCourse, "l", day, timestring)
        if large >= 7:
             remainder = large%7
             number_of_largegroups = (large-remainder)/7
@@ -764,13 +723,3 @@ def sizeCount(course_entries, size):
 if __name__ == '__main__':
    app.run(debug = True)
 match()
-       
-        
-    
-# rough draft of the schema for the SQL database storing users' info
-# each row will have an email address, an array of courses, an array of arrays of times where the user is available, 
-# 
-
-
-
-    

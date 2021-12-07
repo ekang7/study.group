@@ -13,7 +13,8 @@
     <!-- display list of resources for each course user is registered in -->
     <div class="container-fluid">
         <br>
-        <br>    
+        <br>
+        {% set count = namespace(value=0) %}
         {% for course in courses %}
             <div class="section">
                 <h2>Course ID {{ course }}</h2>
@@ -22,33 +23,42 @@
                 {% if resources[course] is defined %}
                 <!-- https://stackoverflow.com/questions/17691838/range-in-jinja2-inside-a-for-loop-->
                     {% for n in range(0, (resources[course])|length -1, 2)%}
-                        <a href={{resources[course][n+1]}}>{{ resources[course][n] }}</a>
-                        <br>
+                        <a href={{resources[course][n+1]}} style = "display: block">{{ resources[course][n] }}</a>
                     {% endfor %}
                 {% endif %}
-                <button id="add1">Add Resource</button>
-                <div id="addResource" style="display:none">
+                <!-- https://newbedev.com/how-to-increment-a-variable-on-a-for-loop-in-jinja-template-->
+                {% set count.value = count.value + 6 %}
+                <button id={{count.value}} class = "buttoncount">Add Resource</button>
+                <div id={{count.value+1}} style="display:none">
                     <form action="/courses" method="post">
-                        <input id="resourceCourse" name="resourceCourse" type="hidden" value={{course}}>
+                        <input id={{count.value+2}} name="resourceCourse" type="hidden" value={{course}}>
                         <label for="resourceLink">Link to resource:</label>
-                        <input id="resourceLink" name="resourceLink" placeholder="Put Link Here" type="url">
+                        <input id={{count.value+3}} name="resourceLink" placeholder="Put Link Here" type="url">
                         <label for="resourceTitle">Title of resource:</label>
-                        <input id="resourceTitle" name="resourceTitle" placeholder="Put Title Here" type="text">
-                        <button type="submit" id="add2">Add Resource</button>                   
+                        <input id={{count.value+4}} name="resourceTitle" placeholder="Put Title Here" type="text">
+                        <button type="submit" id={{count.value+5}}>Add Resource</button>                   
                     </form> 
                 </div>           
             </div>
-            <script>
-                let resourceLink = document.getElementById('resourceLink').value;
-                let resourceTitle = document.getElementById('resourceTitle').value;
-                document.querySelector('#add1').addEventListener('click', function(){
-                    document.getElementById('addResource').style.display = 'block'
-                    document.getElementById('add1').style.display = 'none'
-                });
-                document.querySelector('#add2').addEventListener('click', function(){
-                    location.href = "./courses.html";
-                });
-            </script>
         {% endfor %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function(){
+                //https://www.tutorialrepublic.com/faq/how-to-check-if-a-variable-exists-or-defined-in-javascript.php
+                let limit = document.getElementsByClassName("buttoncount").length;
+                for (let x = 6; x < limit * 6 + 6; x += 6){
+                    let resourceLink = document.getElementById(""+ (x + 3)).value;
+                    let resourceTitle = document.getElementById(""+ (x + 4)).value;
+                    document.getElementById(""+x).addEventListener('click', function(){
+                        document.getElementById(""+(x+1)).style.display = 'block';
+                        document.getElementById(""+(x)).style.display = 'none';
+                    });
+                    document.getElementById(""+(x + 5)).addEventListener('click', function(){
+                        location.href = "./courses.html";
+                    });
+                }
+            });
+            </script>
+
     </div>
+
 {% endblock %}
