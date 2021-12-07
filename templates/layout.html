@@ -12,6 +12,7 @@
         <!-- Row of Buttons -->
         <div class="selections">
             {% if session["user_id"] %}
+                <!-- tabs that will display if user is logged in -->
                 <ul>
                     <li><a href="/main">Home</a></li>
                     <li><a href="/logout">Logout</a></li>
@@ -19,6 +20,7 @@
                     <li><a href="/courses">Course Resources</a></li>
                 </ul>
             {% else %}
+                <!-- tabs that will display if user is not logged in -->
                 <ul>
                     <li><a href="/main">Home</a></li>
                     <li><a href="/register">Register</a></li>
@@ -27,6 +29,7 @@
             {% endif %}
         </div>
 
+        <!-- insert child html -->
         <main>
             {% block main %}{% endblock %}
         </main>
