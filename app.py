@@ -321,7 +321,17 @@ def prefs():
         return render_template("prefs.html", locations=locations, daysoftheweek = daysoftheweek, time_to_index = time_to_index)
 
 def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
-    #https://www.programiz.com/python-programming/methods/string/count
+    timestring = ""
+    for time in timeblock: 
+        timestring+=time+","
+    timestring = timestring[0: len(timestring)-1]
+    '''locationstring = ""
+    for person in people:
+        course_locations = db.execute("SELECT locations FROM prefs WHERE course = ? AND times LIKE ? AND day = ? AND email = ?", uniqueCourse, "%"+timestring+"%", day, person)
+        print("HMMMMM",course_locations[0])
+        locationstring+=course_locations["locations"]+","
+    locationstring = locationstring[0: len(locationstring)-1]
+    #https://www.programiz.com/python-programming/methods/string/count'''
     places = {
                 "Cabot Library": 0, 
                 "Dorm Room": 0, 
@@ -332,6 +342,7 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
     for key in places: 
         places[key] = locations.count(key)
     locations = places 
+    print("HIIIIIIIIIII", locations)
     #people as a list
     #locations as a dictionary
     #uniquecourse as a integer valiue
@@ -380,9 +391,9 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
             for entry in timesdict:
                 if timesdict.has_key(entry):
                     timetext = timetext + timetext[entry] + " of people prefer " + entry + " on " + daysoftheweek[x] + ". "
-        locationtext = ""
+        locationtext = " Of people who plan to meet at this time (whether in your group or not): "
         for entry in locations:
-            locationtext = locationtext + locations[entry]/count + " of people prefer " + entry + ". "
+            locationtext = locationtext + " "+ str(locations[entry]) + " people prefer " + entry + "."
         names = ""
         for person in people:
             if names == "":
@@ -410,9 +421,9 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
         return 'Sent'
 
     if matched:
-        locationtext = ""
+        locationtext = " Of people who plan to meet at this time (whether in your group or not): \n"
         for entry in locations:
-            locationtext = locationtext + str(locations[entry]/count) + " of people prefer " + entry + ". "
+            locationtext = locationtext + " "+ entry + ": "+str(locations[entry]) + "\n"
         names = ""
         for person in people:
             if names == "":
@@ -659,6 +670,7 @@ def grouper(uniqueCourse, timeblock, emails, day):
     locationstring = ""
     for x in course_locations: 
         locationstring+=x["locations"]
+   
     number_of_people = len(course_entries)
     #if number_of_people == 1: 
      #   matchemail(emails, locationstring, timeblock, day, uniqueCourse, False)
@@ -684,8 +696,7 @@ def grouper(uniqueCourse, timeblock, emails, day):
                matchemail(emails[0:3], locationstring, timeblock, day, uniqueCourse, True)
                matchemail(emails[3:6], locationstring, timeblock, day, uniqueCourse, True)
        else:
-           matchemail(emails, locationstring, timeblock, day, uniqueCourse, True)
-       db.execute("UPDATE prefs SET matched = 1 WHERE course = ? AND times LIKE ? AND day = ?", uniqueCourse, "%"+timestring+"%", day) 
+           matchemail(emails, locationstring, timeblock, day, uniqueCourse, True) 
     else: # 7+ people
        large = sizeCount(course_entries, "l")
        medium = sizeCount(course_entries, "m")
