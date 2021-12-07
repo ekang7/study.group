@@ -108,13 +108,13 @@ SECURITY_PASSWORD_SALT = 'v6u9-DwrC@BL'
 def register(): 
     if request.method == "POST":
         error = ""
-        email = request.form.get("username")
+        email = request.form.get("email")
         firstname = request.form.get("firstName")
         lastname = request.form.get("lastName")
         password = request.form.get("password")
         passwordconfirm = request.form.get("confirmation")
-
-        if len(email) == 0 or len(password) == 0 or len(firstname) ==0 or len(lastname ==0):
+        if not email or not password or not firstname or not lastname:
+        #if len(email) == 0 or len(password) == 0 or len(firstname) ==0 or len(lastname ==0):
             error = "All fields must be filled out"
             return render_template("register.html",error=error)
         else:
@@ -128,8 +128,8 @@ def register():
                 else:
                     passwordhash = generate_password_hash(password)
                     db.execute("INSERT INTO users (email, password, firstname, lastname) VALUES(?, ?, ?, ?)", email, passwordhash, firstname, lastname)
-                    verify(email, firstname)
-
+                   # verify(email, firstname)
+                    return render_template("login.html", errormessage = "WELCOME!")
     else:
         return render_template("register.html")
 
@@ -141,23 +141,20 @@ def index():
     if request.method == "POST":
         # check if email was submitted
         if not request.form.get("email"):
-            print("AAAAAAAAAA")
-            return render_template("login.html")
+            return render_template("login.html", errormessage = "Please enter an email!")
         # check if password was submitted
         if not request.form.get("password"):
-            print("BBBBBBBBBBBB")
-            return render_template("login.html")
-        
+            return render_template("login.html", errormessage = "Please enter a password!")
+         
         # query for the given email from user table
         rows = db.execute("SELECT * FROM users WHERE email = ?", request.form.get("email"))
-        print("CCCCCCCCCCCCCC")
         # check if email is a user and password is correct
-        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
-            print("DDDDDDDDDDDDDDDD")
-            return render_template("login.html", erormessage = "Incorrect login")
+        if len(rows) != 1 or not check_password_hash(rows[0]["password"], request.form.get("password")):
+            errormessage = "Incorrect login"
+            return render_template("login.html", errormessage = errormessage)
         
         # remember user
-        session["user_id"] = rows[0]["id"]
+        session["user_id"] = rows[0]["email"]
         # redirect to home page
         return redirect("/")
 
@@ -166,7 +163,6 @@ def index():
 
 
 @app.route("/")
-@login_required
 def home(): 
     return render_template("main.html")
     
@@ -175,6 +171,23 @@ def home():
 @login_required
 def prefs(): 
     locations = ["Cabot Library", "Dorm Room", "Lamont Library", "Smith Center", "Widener Library"]
+    userprefs = db.execute("SELECT * FROM prefs WHERE email = ? ", session["user_id"])
+    # [
+    #  [courses]
+    # [timeDict]
+    # [groupsizes]
+    # [locations]
+    # ]
+    if userprefs: 
+        #courses = a list of all courses, timeDict, locations, group size
+        usercourses = []
+        timeDict = {}
+        userlocations = []
+        usergroupsizes = []
+        for x in userprefs: 
+            usercourses.append(userprefs["course"])
+            timeDict[userprefs[]]  
+
     if request.method == "POST":
         #Assume that course is the course they enter into the form
         #Assume that size is the size preference they enter into the form
@@ -183,7 +196,7 @@ def prefs():
         #the timelist should be times from least to greatest, CHECK IF THIS IS AUTOMATICALLY DONE 
         course = request.form.get("course")
         email = session["user_id"]
-        day = request.form.get("day")
+        #day = request.form.get("day")
         size = request.form.get("size")
         locationlist = request.form.get("location")
         timeDict = {}
@@ -199,21 +212,21 @@ def prefs():
                 db.execute("INSERT INTO prefs (email, course, size, times, locations, day) VALUES (?, ?, ?, ?, ?)", email, course, size, timeDict[x], locationlist, x)
         
         #Matching algorithm: 
-        courses = db.execute("SELECT DISTINCT course FROM prefs")
-        for course in courses: 
+        #courses = db.execute("SELECT DISTINCT course FROM prefs")
+        #for course in courses: 
             #first course is variable name, second course is in for loop, third course refers to course entry in table
-            course = course["course"]
-            same_courses = db.execute("SELECT * FROM prefs WHERE course = ?", course)
+            #course = course["course"]
+            #same_courses = db.execute("SELECT * FROM prefs WHERE course = ?", course)
             
             
             
         
         #location = request.form.get("location")
-        return render_template("prefs.html", daysoftheweek = daysoftheweek)
+        return render_template("prefs.html", locations = locations, daysoftheweek = daysoftheweek)
 
     if request.method == "GET":
 
-        return render_template("prefs.html", locations=locations)
+        return render_template("prefs.html", locations=locations, daysoftheweek = daysoftheweek)
 
 def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
     #people as a list

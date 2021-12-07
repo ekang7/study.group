@@ -17,12 +17,11 @@
         <form action="/login" method="post">
             <div class="type2">
                 <input autocomplete="off" autofocus id="email" name="email" placeholder="Harvard email address" type="text">
-                    <input id="password" name="password" placeholder="Password" type="password">
-                    <button type="submit">Login</button>
-                    
-                {% endif %}
+                <input id="password" name="password" placeholder="Password" type="password">
+                <button type="submit">Login</button>
                 
             </div>
         </form>
+        <h>{{ errormessage }}</h>
     </div>
 {% endblock %}

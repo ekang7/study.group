@@ -12,59 +12,60 @@
     <br>
 
     <!-- display for each course -->
-    {% for course in courses %}
-        <div class="section">
-            <h2>Course ID {{ course }} Preferences:</h2>
-            {% for day in days %}
-                <h3>{{ day }}</h3>
-                <p>Times:</p>
-                {% for time in times %}
-                    <p>{{ time }}</p>
+    {% if courses %}
+        {% for course in courses %}
+            <div class="section">
+                <h2>Course ID {{ course }} Preferences:</h2>
+                {% for day in days %}
+                    <h3>{{ day }}</h3>
+                    <p>Times:</p>
+                    {% for time in times %}
+                        <p>{{ time }}</p>
+                    {% endfor %}
                 {% endfor %}
-            {% endfor %}
-            <h3>Locations</h3>
-            {% for location in locations %}
-                <p>{{ location }}</p>
-            {% endfor %}
-            <h3>Group Size</h3>
-            <p>{{ size }}</p>
-            <button id="editPrefs">Edit Preferences</button>
-            <button id="delCourse">Remove Course</button>
-            
-            <!-- hidden edit preferences form -->
-            <form action="/prefs" method="post">
-                <div id="editForm" style="display:none">
-                    <label for="course">Course:</label>
-                    <select name="course" id="course">
-                        <option selected>{{ course }}</option>
-                    </select>
-                    <main>
-                        {% block main %}{% endblock %}
-                    </main>
-                    <button type="submit" onclick = "()=>{ console.log(document.getElementById('times').val())};">Submit Preferences</button>
-                    <button id="noEdit">Cancel</button>
-                </div>
-            </form>
-            <script>
-                document.querySelector('#editPrefs').addEventListener('click', function(){
-                    document.getElementById('editForm').style.display = 'block'
-                    document.getElementById('editPrefs').style.display = 'none'
-                    document.getElementById('delCourse').style.display = 'none'
-                });
-                document.querySelector('#delCourse').addEventListener('click', function(){
-                    db.execute("DELETE FROM preferences WHERE email = ? AND course = ?", email, course)
-                });
-                document.querySelector('#noEdit').addEventListener('click', function(){
-                    document.getElementById('editForm').style.display = 'none'
-                    document.getElementById('editPrefs').style.display = 'block'
-                    document.getElementById('delCourse').style.display = 'block'
-                });
-            </script>
+                <h3>Locations</h3>
+                {% for location in locations %}
+                    <p>{{ location }}</p>
+                {% endfor %}
+                <h3>Group Size</h3>
+                <p>{{ size }}</p>
+                <button id="editPrefs">Edit Preferences</button>
+                <button id="delCourse">Remove Course</button>
+                
+                <!-- hidden edit preferences form -->
+                <form action="/prefs" method="post">
+                    <div id="editForm" style="display:none">
+                        <label for="course">Course:</label>
+                        <select name="course" id="course">
+                            <option selected>{{ course }}</option>
+                        </select>
+                        <main>
+                            {% block main %}{% endblock %}
+                        </main>
+                        <button type="submit" onclick = "()=>{ console.log(document.getElementById('times').val())};">Submit Preferences</button>
+                        <button id="noEdit">Cancel</button>
+                    </div>
+                </form>
+                <script>
+                    document.querySelector('#editPrefs').addEventListener('click', function(){
+                        document.getElementById('editForm').style.display = 'block'
+                        document.getElementById('editPrefs').style.display = 'none'
+                        document.getElementById('delCourse').style.display = 'none'
+                    });
+                    document.querySelector('#delCourse').addEventListener('click', function(){
+                        db.execute("DELETE FROM preferences WHERE email = ? AND course = ?", email, course)
+                    });
+                    document.querySelector('#noEdit').addEventListener('click', function(){
+                        document.getElementById('editForm').style.display = 'none'
+                        document.getElementById('editPrefs').style.display = 'block'
+                        document.getElementById('delCourse').style.display = 'block'
+                    });
+                </script>
 
-        </div>
-        <br>
-    {% endfor %}
-    
+            </div>
+            <br>
+        {% endfor %}
+    {% endif %}
     <!-- preferences inputs for a new course -->
     <div class="container-fluid">
         <h2>Add a New Course:</h2>

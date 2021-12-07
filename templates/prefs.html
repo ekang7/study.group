@@ -1,8 +1,8 @@
-{% extends "prefs.html" %}
+{% extends "prefsLayout.html" %}
 
 <!-- times, locations, and group size sections of form -->
 {% block main %}
-    <label for="times">Preferred Times (select multiple in a row by holding shift; select multiple separated times by holding cmd):</label>    
+    <label>Preferred Times (select multiple in a row by holding shift; select multiple separated times by holding cmd):</label>    
     <table>
         <tr>
             {% for day in daysoftheweek %}
