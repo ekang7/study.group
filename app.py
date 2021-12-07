@@ -9,7 +9,6 @@ from string import Template
 from flask_session import Session
 from login import login_required
 from werkzeug.security import check_password_hash, generate_password_hash
-from itsdangerous import URLSafeTimedSerializer
 
 app = Flask(__name__)
 # template for email code from https://www.geeksforgeeks.org/sending-emails-using-api-in-flask-mail/
@@ -173,7 +172,6 @@ def register():
         password = request.form.get("password")
         passwordconfirm = request.form.get("confirmation")
         if not email or not password or not firstname or not lastname:
-        #if len(email) == 0 or len(password) == 0 or len(firstname) ==0 or len(lastname ==0):
             error = "All fields must be filled out"
             return render_template("register.html",error=error)
         else:
@@ -187,7 +185,6 @@ def register():
                 else:
                     passwordhash = generate_password_hash(password)
                     db.execute("INSERT INTO users (email, password, firstname, lastname) VALUES(?, ?, ?, ?)", email, passwordhash, firstname, lastname)
-                   # verify(email, firstname)
                     return render_template("login.html", errormessage = "WELCOME!")
     else:
         return render_template("register.html")
@@ -211,9 +208,7 @@ def index():
         if len(rows) != 1 or not check_password_hash(rows[0]["password"], request.form.get("password")):
             errormessage = "Incorrect login"
             return render_template("login.html", errormessage = errormessage)
-        #if rows[0]['confirmed'] = 0:
-            #errormessage = "Not verified"
-            #return render_template("login.html", errormessage = errormessage)
+
         # remember user
         session["user_id"] = rows[0]["email"]
         # redirect to home page
@@ -223,6 +218,7 @@ def index():
         return render_template("login.html")
 
 @app.route("/logout")
+@login_required
 def logout():
     # Defined using the Finance problem set
     """Log user out"""
@@ -232,30 +228,55 @@ def logout():
 
     # Redirect user to login form
     return redirect("/")
-'''@app.route("/courses", methods=["GET", "POST"])
+
+@app.route("/courses", methods=["GET", "POST"])
+@login_required
 def courses(): 
-    courses = db.execute("SELECT DISTINCT course FROM prefs WHERE email = ?", session["user_id"])
     if request.method == "POST":
-        course = 
+        course = request.form.get('resourceCourse')
         resourcelink = request.form.get("resourceLink")
         resourcetitle = request.form.get("resourceTitle")
-        db.execute("INSERT INTO resources (course, resourcelink, resourcetitle) VALUES (?, ?, ?)", course, resourcelink, resourcetitle
-    else:
+        db.execute("INSERT INTO courses (course, url, title) VALUES (?, ?, ?)", course, resourcelink, resourcetitle)
+        coursesDict = db.execute("SELECT DISTINCT course FROM prefs WHERE email = ?", session["user_id"])
+        courses = []
+        for courseDict in coursesDict: 
+            courses.append(courseDict["course"])
         resourcelist = []
-        resources = {}
-        for course in courses
-            resource[course] = resourcelist
-
-        return render_template("courses.html", courses = courses)'''
+        resources = {} 
+        for course in courses:
+           tempDict = db.execute("SELECT title, url FROM courses WHERE course = ?;", course)
+           for temp in tempDict:
+                try:
+                    resources[course] = resources[course] + [temp["title"], temp["url"]]
+                except: 
+                    resources[course] = [temp["title"], temp["url"]]
+        print (resources)
+        return render_template("courses.html", courses = courses, resources = resources)
+    else: 
+        coursesDict = db.execute("SELECT DISTINCT course FROM prefs WHERE email = ?", session["user_id"])
+        courses = []
+        for courseDict in coursesDict: 
+            courses.append(courseDict["course"])
+        resourcelist = []
+        resources = {} 
+        for course in courses:
+            tempDict = db.execute("SELECT title, url FROM courses WHERE course = ?;", course)
+            for temp in tempDict:
+                try:
+                    resources[course] = resources[course] + [temp["title"], temp["url"]]
+                except: 
+                    resources[course] = [temp["title"], temp["url"]]
+        print(resources)
+        return render_template("courses.html", courses = courses, resources = resources) 
         
 
 
 @app.route("/")
 def home(): 
-    return render_template("main.html")
-    
+    return render_template("main.html")#f courses():s():
 
 @app.route("/prefs", methods=["GET", "POST"])
+@login_required
 def prefs(): 
     locations = ["Cabot Library", "Dorm Room", "Lamont Library", "Smith Center", "Widener Library"]
     userprefs = db.execute("SELECT * FROM prefs WHERE email = ? ", session["user_id"])
@@ -324,13 +345,6 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
     timestring = ""
     for time in timeblock: 
         timestring+=time+","
-    timestring = timestring[0: len(timestring)-1]
-    '''locationstring = ""
-    for person in people:
-        course_locations = db.execute("SELECT locations FROM prefs WHERE course = ? AND times LIKE ? AND day = ? AND email = ?", uniqueCourse, "%"+timestring+"%", day, person)
-        print("HMMMMM",course_locations[0])
-        locationstring+=course_locations["locations"]+","
-    locationstring = locationstring[0: len(locationstring)-1]
     #https://www.programiz.com/python-programming/methods/string/count'''
     places = {
                 "Cabot Library": 0, 
@@ -342,7 +356,6 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
     for key in places: 
         places[key] = locations.count(key)
     locations = places 
-    print("HIIIIIIIIIII", locations)
     #people as a list
     #locations as a dictionary
     #uniquecourse as a integer valiue
@@ -352,14 +365,6 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
     '''print("UHH", duplicates)'''
     #duplicates[uniqueCourse] = people
     #noduplicates = True
-    '''for person in people:
-        if person in duplicates[uniqueCourse]:
-            print("HMMMMMMMMMMMMMMMMMMMM")
-            noduplicates = False
-            break
-    if noduplicates: '''
-    print("LOOOOOOOOOOOOK")
-    print(people)
     count = len(people)
     if not matched:
         timesdictSunday={}
@@ -401,13 +406,13 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
             else:
                 names = names + ", " + db.execute("SELECT firstname from users WHERE email = ?", person)['firstname']
 
-        msg = Message(
-                    'An Update on Your Study Group!',
-                    sender ='study.groupmatching@gmail.com',
+        #msg = Message(
+         #           'An Update on Your Study Group!',
+          #          sender ='study.groupmatching@gmail.com',
                     #Problem: Recipients can see all other recipients (not BCC)
                     #solution: https://stackoverflow.com/questions/1546367/python-how-to-send-mail-with-to-cc-and-bcc
-                    recipients = people
-                    )
+           #         recipients = people
+            #        )
                     #string formatting in python: https://realpython.com/python-string-formatting/
         
         t = 'Hello, $name. Unfortunately, we were not able to find a perfect match for you for $course. Nevertheless, we are sending a list of preferred times and locations for other people in your class who need a group: '
@@ -415,7 +420,7 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
         t.replace('$course', uniqueCourse)
         t = t + timetext
         t = t+ locationtext
-        msg.body(t)
+        #msg.body(t)
         #with app.app_context():
             #mail.send(msg)
         return 'Sent'
@@ -433,11 +438,11 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
                 table = db.execute("SELECT firstname from users WHERE email = ?", person)
                 names = names + ", " + table[0]['firstname']
 
-        msg = Message(
-                    'You have been matched!',
-                    sender ='study.groupmatching@gmail.com',
-                    recipients = people
-                    )
+        #msg = Message(
+         #           'You have been matched!',
+          #          sender ='study.groupmatching@gmail.com',
+           #         recipients = people
+            #        )
                     #string formatting in python: https://realpython.com/python-string-formatting/
         
         t = 'Hello, name. We wanted to let you know that you have been matched! Your group for course will meet on day at time.'
@@ -457,58 +462,11 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
         t = t + locationtext
         print(names, uniqueCourse, day, timestring)
         print(t)
-        msg.body = t
-        with app.app_context():
-            mail.send(msg)
+       # msg.body = t
+        #with app.app_context():
+         #   mail.send(msg)
         return 'Sent'
-# Code for generating and confirming token taken from https://realpython.com/handling-email-confirmation-in-flask/#generate-confirmation-token
-def generate_confirmation_token(email):
-    serializer = URLSafeTimedSerializer('SECRET_KEY')
-    return serializer.dumps(email, salt='SECURITY_PASSWORD_SALT')
 
-
-def confirm_token(token, expiration=3600):
-    serializer = URLSafeTimedSerializer('SECRET_KEY')
-    try:
-        email = serializer.loads(
-            token,
-            salt='SECURITY_PASSWORD_SALT',
-            max_age=expiration
-        )
-    except:
-        return False
-    return email
-
-@app.route('/confirm/<token>')
-@login_required
-def confirm_email(token):
-    try:
-        email = confirm_token(token)
-    except:
-        flash('The confirmation link is invalid or has expired.', 'danger')
-    confirmvalue = db.execute("SELECT confirmed FROM users WHERE email = ?", email)
-    if confirmvalue[0]['confirmed'] == 1:
-        flash('Account already confirmed. Please login.', 'success')
-    else:
-        db.execute("UPDATE users SET confirmed = ? where email = ?", 1, email)
-        flash('You have confirmed your account. Thanks!', 'success')
-    return redirect(url_for('/'))
-
-def verify(email, firstname): 
-    token = generate_confirmation_token(email)
-    confirm_url = url_for(email, token=token, _external=True)
-    msg = Message(
-                'study.group Email Verification',
-                sender ='study.groupmatching@gmail.com',
-                recipients = email
-               )
-    t = "#Hello, $name! Thank you for registering for study.group! To complete your registration, please click the following link: $link"
-    t = t.replace('$name', firstname)
-    t = t.replace('$link', confirm_url)
-    msg.body = t
-    mail.send(msg)
-    return 'Sent'
-    
 def match(): 
     # Creates copy of preferences table called prefs to save preferences information
     # db.execute("SELECT * INTO prefs FROM preferences;")  
@@ -648,11 +606,8 @@ def timematch(uniqueCourse, day):
                 grouper(uniqueCourse, timeblock, people, day)
                 for r in people: 
                     duplicates.append(r)
-            print("DUPLICATES: ", duplicates)
-            print("COUNT: ", count)
         key += 1
         key += count
-        print("KEY: ", key)
     # Handle left over people
     
 

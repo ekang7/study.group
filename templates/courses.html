@@ -1,10 +1,10 @@
-{% extends layout.html %}
+{% extends "layout.html" %}
 
 {% block title %}
     Courses
 {% endblock %}
 
-{% blockmain %}
+{% block main %}
     <!-- display title of page -->
     <div class="col-sm-8 type1">
         <h1>Courses</h1>
@@ -12,13 +12,20 @@
 
     <!-- display list of resources for each course user is registered in -->
     <div class="container-fluid">
+        <br>
+        <br>    
         {% for course in courses %}
             <div class="section">
                 <h2>Course ID {{ course }}</h2>
                 <!-- list resource links -->
-                {% for resourse in resources %}
-                    <a href={{resourceLink}}>{{ resourceTitle }}</a>
-                {% endfor %}
+                <!-- https://stackoverflow.com/questions/3842690/in-jinja2-how-do-you-test-if-a-variable-is-undefined?rq=1-->
+                {% if resources[course] is defined %}
+                <!-- https://stackoverflow.com/questions/17691838/range-in-jinja2-inside-a-for-loop-->
+                    {% for n in range(0, (resources[course])|length -1, 2)%}
+                        <a href={{resources[course][n+1]}}>{{ resources[course][n] }}</a>
+                        <br>
+                    {% endfor %}
+                {% endif %}
                 <button id="add1">Add Resource</button>
                 <div id="addResource" style="display:none">
                     <form action="/courses" method="post">

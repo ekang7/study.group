@@ -1,37 +1,57 @@
-{% extends "prefsLayout.html" %}
+{% extends "layout.html" %}
 
-<!-- times, locations, and group size sections of form -->
-{% block body %}
-    <label>Preferred Times (select multiple in a row by holding shift; select multiple separated times by holding cmd):</label>    
-    <table>
-        <tr>
-            {% for day in daysoftheweek %}
-                <th>{{ day }}</th>
-            {% endfor %}
-        </tr>
-        <tr>
-            {% for day in daysoftheweek %}
-                <td>
-                    <select multiple name={{day}} id={{day}}>
-                        {% for key in time_to_index %}
-                            <option>{{ key }}</option>
+{% block title %}
+    Preferences
+{% endblock %}
+
+{% block main %}
+    <!-- display title of page -->
+    <div class="col-sm-8 type1">
+        <h1>Group Preferences</h1>
+    </div>
+    <br>
+
+    <!-- display preferences form -->
+    <div class="container-fluid">
+        <h2>Add a New Course or Update Courses:</h2>
+        <form action="/prefs" method="post">
+            <div class="type2">
+                <label for="course">6-Digit Course ID (you can find this in the Harvard Course Catalog):</label>
+                <input id="course" name="course" placeholder="Course" minlength="6" maxlength="6" type="text">
+                <label>Preferred Times (select multiple in a row by holding shift; select multiple separated times by holding cmd):</label>    
+                <table>
+                    <tr>
+                        {% for day in daysoftheweek %}
+                            <th>{{ day }}</th>
                         {% endfor %}
-                    </select>
-                </td>
-            {% endfor %}
-        </tr>
-    </table>
-    <label for="location">Preferred Location for Studying:</label>
-    <select id = "location" name = "location" type = "text">
-        {% for location in locations %}
-                <option>{{ location }}</option>
-        {% endfor %}
-    </select>
-    <label for="size">Preferred Group Size:</label>
-    <select name="size" id="size">
-        <option disabled selected>Group Size</option>
-        <option value="s">Small (2-3)</option>
-        <option value="m">Medium (4-6)</option>
-        <option value="l">Large (7+)</option>
-    </select>
+                    </tr>
+                    <tr>
+                        {% for day in daysoftheweek %}
+                            <td>
+                                <select multiple name={{day}} id={{day}}>
+                                    {% for key in time_to_index %}
+                                        <option>{{ key }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                        {% endfor %}
+                    </tr>
+                </table>
+                <label for="location">Preferred Location for Studying:</label>
+                <select id = "location" name = "location" type = "text">
+                    {% for location in locations %}
+                            <option>{{ location }}</option>
+                    {% endfor %}
+                </select>
+                <label for="size">Preferred Group Size:</label>
+                <select name="size" id="size">
+                    <option disabled selected>Group Size</option>
+                    <option value="s">Small (2-3)</option>
+                    <option value="m">Medium (4-6)</option>
+                    <option value="l">Large (7+)</option>
+                </select>
+                <button type="submit" onclick = "()=>{ console.log(document.getElementById('times').val())};">Submit Preferences</button>
+            </div>
+        </form>
+    </div>
 {% endblock %}
