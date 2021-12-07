@@ -321,6 +321,8 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
     #uniquecourse as a integer valiue
     #matched as a boolean
     # day is one day because we are only matching for one day per week
+    # configuration of mail
+    
     print("LOOOOOOOOOOOOK")
     print(people)
     count = len(people)
@@ -373,19 +375,20 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
                     )
                     #string formatting in python: https://realpython.com/python-string-formatting/
         
-        t = Template('Hello, $name. Unfortunately, we were not able to find a perfect match for you for $course. Nevertheless, we are sending a list of preferred times and locations for other people in your class who need a group: ')
+        t = 'Hello, $name. Unfortunately, we were not able to find a perfect match for you for $course. Nevertheless, we are sending a list of preferred times and locations for other people in your class who need a group: '
         t.replace('$name', names)
         t.replace('$course', uniqueCourse)
         t = t + timetext
         t = t+ locationtext
         msg.body(t)
-        mail.send(msg)
+        with app.app_context():
+            mail.send(msg)
         return 'Sent'
 
     if matched:
         locationtext = ""
         for entry in locations:
-            locationtext = locationtext + locations[entry]/count + " of people prefer " + entry + ". "
+            locationtext = locationtext + (locations[entry]/count) + " of people prefer " + entry + ". "
         names = ""
         for person in people:
             if names == "":
@@ -402,19 +405,22 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
                     )
                     #string formatting in python: https://realpython.com/python-string-formatting/
         
-        t = 'Hello, $name. We wanted to let you know that you have been matched! Your group for $course will meet on $day at $time.'
-        t.replace('$name', names)
-        t.replace('$course', uniqueCourse)
-        t.replace('$day', day)
+        t = 'Hello, name. We wanted to let you know that you have been matched! Your group for course will meet on day at time.'
+        t = t.replace('name', names)
+        t = t.replace('course', uniqueCourse)
+        t = t.replace('day', day)
         timestring = ""
         for x in timeblock: 
             timestring += x +","
+        print(timeblock)
         timestring = timestring[0: len(timestring)-1]
-        t.replace('$time', timestring)
+        t = t.replace("time", timestring)
         t = t + locationtext
-        t = Template(t)
-        msg.body(t)
-        mail.send(msg)
+        print(names, uniqueCourse, day, timestring)
+        print(t)
+        msg.body = t
+        with app.app_context():
+            mail.send(msg)
         return 'Sent'
 #Code for generating and confirming token taken from https://realpython.com/handling-email-confirmation-in-flask/#generate-confirmation-token
 def generate_confirmation_token(email):
@@ -604,8 +610,7 @@ def grouper(uniqueCourse, timeblock, emails, day):
         locationstring += course_entry["locations"] + ","
     number_of_people = len(course_entries)
     if number_of_people <= 3:
-        matchemail(emails, locationstring, timeblock, day, uniqueCourse, True)
-        db.execute("UPDATE prefs SET matched = 1 WHERE course = ? AND times LIKE %?% AND day = ?", uniqueCourse, timestring, day)    
+        matchemail(emails, locationstring, timeblock, day, uniqueCourse, True)  
     elif number_of_people <=6 and number_of_people >=4:
        large = sizeCount(course_entries, "l")
        medium = sizeCount(course_entries, "m")
@@ -627,20 +632,20 @@ def grouper(uniqueCourse, timeblock, emails, day):
                matchemail(emails[4:6], locationstring, timeblock, day, uniqueCourse, True)
        else:
            matchemail(emails, locationstring, timeblock, day, uniqueCourse, True)
-       db.execute("UPDATE prefs SET matched = 1 WHERE course = ? AND times LIKE %?% AND day = ?", uniqueCourse, timestring, day) 
+       db.execute("UPDATE prefs SET matched = 1 WHERE course = ? AND times LIKE ? AND day = ?", uniqueCourse, "%"+timestring+"%", day) 
     else: # 7+ people
        large = sizeCount(course_entries, "l")
        medium = sizeCount(course_entries, "m")
        small = number_of_people - large - medium
-       large_people_dict = db.execute("SELECT email FROM prefs WHERE course = ? AND timeblock LIKE %?% AND day = ? AND size = ?", uniqueCourse, timeblock, day, "l")
+       large_people_dict = db.execute("SELECT email FROM prefs WHERE course = ? AND timeblock LIKE ? AND day = ? AND size = ?", uniqueCourse, "%"+timeblock+"%", day, "l")
        large_people = []
        for t in large_people_dict: 
            large_people.append(large_people_dict["email"])
-       medium_people_dict = db.execute("SELECT email FROM prefs WHERE course = ? AND timeblock LIKE %?% AND day = ? AND size = ?", uniqueCourse, timeblock, day, "m")
+       medium_people_dict = db.execute("SELECT email FROM prefs WHERE course = ? AND timeblock LIKE ? AND day = ? AND size = ?", uniqueCourse, "%"+timeblock+"%", day, "m")
        medium_people = []
        for t in medium_people_dict: 
            medium_people.append(medium_people_dict["email"])
-       small_people_dict = db.execute("SELECT email FROM prefs WHERE course = ? AND timeblock LIKE %?% AND day = ? AND size = ?", uniqueCourse, timeblock, day, "s")
+       small_people_dict = db.execute("SELECT email FROM prefs WHERE course = ? AND timeblock LIKE ? AND day = ? AND size = ?", uniqueCourse, "%"+timeblock+"%", day, "s")
        small_people = []
        for t in small_people_dict:
            small_people.append(small_people_dict["email"])

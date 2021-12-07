@@ -11,13 +11,13 @@
     </div>
     <br>
 
-  
+    <!-- display preferences form -->
     <div class="container-fluid">
         <h2>Add a New Course:</h2>
         <form action="/prefs" method="post">
             <div class="type2">
                 <label for="course">6-Digit Course ID (you can find this in the Harvard Course Catalog):</label>
-                <input id="course" name="course" placeholder"Course" minlength="6" maxlength="6" type="text">
+                <input id="course" name="course" placeholder="Course" minlength="6" maxlength="6" type="text">
                 <main>
                     {% block body %}{% endblock %}
                 </main>
