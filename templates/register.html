@@ -13,6 +13,10 @@
     <!-- registration form -->
     <form action="/register" method="post">
         <div class="type2">
+            <label for="firstName">First Name:</label>
+            <input autocomplete="off" autofocus id="firstName" name="firstName" placeholder="First Name" type="text">
+            <label for="lastName">Last Name:</label>
+            <input autocomplete="off" autofocus id="lastName" name="lastName" placeholder="Last Name" type="text">
             <label for="email">Register with your Harvard email address:</label>
             <input autocomplete="off" autofocus  id="email" name="email" placeholder="Harvard email address" type="text">
             <label for="password">Create a new password:</label>
@@ -20,6 +24,7 @@
             <label for="confirmation">Please confirm your new password:</label>
             <input id="confirmation" name="confirmation" placeholder="Password Confirmation" type="password"> 
             <button type="submit">Register</button>
+            <p>{{ error }}</p>
         </div>
     </form>
 {% endblock %}
