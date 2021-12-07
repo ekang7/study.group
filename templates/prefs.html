@@ -1,7 +1,7 @@
 {% extends "prefsLayout.html" %}
 
 <!-- times, locations, and group size sections of form -->
-{% block main %}
+{% block body %}
     <label>Preferred Times (select multiple in a row by holding shift; select multiple separated times by holding cmd):</label>    
     <table>
         <tr>
@@ -12,7 +12,7 @@
         <tr>
             {% for day in daysoftheweek %}
                 <td>
-                    <select multiple name="times" id={{day}}>
+                    <select multiple name={{day}} id={{day}}>
                         {% for key in time_to_index %}
                             <option>{{ key }}</option>
                         {% endfor %}

@@ -168,7 +168,6 @@ def home():
     
 
 @app.route("/prefs", methods=["GET", "POST"])
-@login_required
 def prefs(): 
     locations = ["Cabot Library", "Dorm Room", "Lamont Library", "Smith Center", "Widener Library"]
     userprefs = db.execute("SELECT * FROM prefs WHERE email = ? ", session["user_id"])
@@ -178,17 +177,16 @@ def prefs():
     # [groupsizes]
     # [locations]
     # ]
-    if userprefs: 
+    #if userprefs: 
         #courses = a list of all courses, timeDict, locations, group size
-        usercourses = []
-        timeDict = {}
-        userlocations = []
-        usergroupsizes = []
-        for x in userprefs: 
-            usercourses.append(userprefs["course"])
-            timeDict[userprefs[]]  
+     #   coursesprefs = []
+      #  counter = 0 
+       # for x in userprefs: 
+        #    coursesprefs.append({})
+         #   coursesprefs[counter]["course"] = 
 
     if request.method == "POST":
+        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         #Assume that course is the course they enter into the form
         #Assume that size is the size preference they enter into the form
         #Assume that timelist is the comma separated list of times that we create from the times they enter into the form
@@ -200,16 +198,23 @@ def prefs():
         size = request.form.get("size")
         locationlist = request.form.get("location")
         timeDict = {}
+        #https://stackoverflow.com/questions/12502646/access-multiselect-form-field-in-flask
         for x in daysoftheweek: 
-            timeDict[x] = request.form.get(x)
+            timeDict[x] = request.form.getlist(x)
+            timestring = ""
+            for y in timeDict[x]: 
+                timestring += y +","
+            timestring = timestring[0:len(timestring)-1]
+            timeDict[x] = timestring
+            print(timeDict[x])
             table = db.execute("SELECT course FROM prefs WHERE email = ? AND course = ? AND day = ?", email, course, x)
             try:
-                if len(table[0]['course'] > 0):
+                if len(table[0]['course']) > 0:
                     db.execute("UPDATE prefs SET size = ?, times = ?, locations = ? WHERE email = ? AND course = ? AND day = ?", size, timeDict[x], locationlist, email, course, x)
                 else:
-                    db.execute("INSERT INTO prefs (email, course, size, times, locations, day) VALUES (?, ?, ?, ?, ?)", email, course, size, timeDict[x], locationlist, x)
+                    db.execute("INSERT INTO prefs (email, course, size, times, locations, day) VALUES (?, ?, ?, ?, ?, ?)", email, course, size, timeDict[x], locationlist, x)
             except:
-                db.execute("INSERT INTO prefs (email, course, size, times, locations, day) VALUES (?, ?, ?, ?, ?)", email, course, size, timeDict[x], locationlist, x)
+                db.execute("INSERT INTO prefs (email, course, size, times, locations, day) VALUES (?, ?, ?, ?, ?, ?)", email, course, size, timeDict[x], locationlist, x)
         
         #Matching algorithm: 
         #courses = db.execute("SELECT DISTINCT course FROM prefs")
@@ -222,11 +227,11 @@ def prefs():
             
         
         #location = request.form.get("location")
-        return render_template("prefs.html", locations = locations, daysoftheweek = daysoftheweek)
+        return render_template("prefs.html", locations = locations, daysoftheweek = daysoftheweek, time_to_index = time_to_index)
 
-    if request.method == "GET":
-
-        return render_template("prefs.html", locations=locations, daysoftheweek = daysoftheweek)
+    else:
+       
+        return render_template("prefs.html", locations=locations, daysoftheweek = daysoftheweek, time_to_index = time_to_index)
 
 def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
     #people as a list
@@ -234,6 +239,8 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
     #uniquecourse as a integer valiue
     #matched as a boolean
     # day is one day because we are only matching for one day per week
+    print("LOOOOOOOOOOOOK")
+    print(people)
     count = len(people)
     if not matched:
         timesdictSunday={}
@@ -397,10 +404,15 @@ def timematch(uniqueCourse, day):
         timeline = timeline["times"]
         timelist = timeline.split(",")
         # timeline has been split into a list of times 
+        #https://www.kite.com/python/answers/how-to-remove-empty-strings-from-a-list-of-strings-in-python
+        filteredtimelist = filter(lambda x: x != "", timelist)
+        timelist = list(filteredtimelist)
         for time in timelist: 
             stackedTimelines[time_to_index[time]] += 1
+
+
     # now stackedtimelines has the number of people who want a specific course at each time block 
-    # https://careerkarma.com/blog/python-sort-a-dictionary-by-value/
+    # https://careerkarma.com/blog/python-sort-a-dictionary-by-value/   
     sortedStackedTimelines = sorted(stackedTimelines.items(), key=lambda x: x[1], reverse=True)
     # Now stackedTimelines is sorted according by popularity of time and stored as a dictionary in sortedStackedTimelines
     # https://realpython.com/iterate-through-dictionary-python/
@@ -611,13 +623,8 @@ def sizeCount(course_entries, size):
 
 if __name__ == '__main__':
    app.run(debug = True)
-
-
-        
-    
-
-    
-        
+match()
+       
         
     
 # rough draft of the schema for the SQL database storing users' info
