@@ -144,6 +144,7 @@ index_to_time = {
                     47: "11:30pm"
 } 
 
+# Handles user registration
 @app.route("/register", methods = ["GET", "POST"])
 def register(): 
     if request.method == "POST":
@@ -180,6 +181,7 @@ def register():
         return render_template("register.html")
 
 
+# Handles user login 
 @app.route("/login", methods=["GET", "POST"])
 def index():
     session.clear()
@@ -208,6 +210,7 @@ def index():
         # Return the login page
         return render_template("login.html")
 
+# Handles user logout 
 @app.route("/logout")
 @login_required
 def logout():
@@ -270,7 +273,7 @@ def courses():
 # Set the homepage for our website to "main.html"
 @app.route("/")
 def home(): 
-    return render_template("main.html")#f courses():s():
+    return render_template("main.html")
 
 @app.route("/prefs", methods=["GET", "POST"])
 @login_required
@@ -284,7 +287,7 @@ def prefs():
         # Assume that locationlist is the single location they enter into the form 
         course = request.form.get("course")
         # Check that course as submitted is an integer with six digits
-        if course % 1 != 0 or len(str(course))!=6:
+        if not course.isdigit() or len(str(course))!=6:
             error = "Make sure you are submitting a six number course ID, not the course name!"
             return render_template("prefs.html", locations = locations, daysoftheweek = daysoftheweek, time_to_index = time_to_index, error = error)
         # Obtain email from the session id for the currently signed in user
@@ -320,8 +323,9 @@ def prefs():
         # Format the prefs html, sending the list of locations, days of week, and times
         return render_template("prefs.html", locations=locations, daysoftheweek = daysoftheweek, time_to_index = time_to_index)
 
+# Handles emailing the matched study groups 
 def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
-    # We looked at this resource to count values: https://www.programiz.com/python-programming/methods/string/count'''
+    # We looked at this resource to count values: https://www.programiz.com/python-programming/methods/string/count
     # Create a dictionary whose keys are the locations and whose initial values are zero
     places = {
                 "Cabot Library": 0, 
@@ -446,6 +450,7 @@ def matchemail(people, locations, timeblock, day, uniqueCourse, matched):
            mail.send(msg)
         return 'Sent'
 
+# This is the match algorithm that matches people into study groups 
 def match(): 
     # Runs timematch on every unique course in the prefs table
     uniqueCourses = db.execute("SELECT DISTINCT course FROM prefs;")
@@ -475,6 +480,7 @@ def match():
                 matchemail(people, locations, None, None, uniqueCourse["course"], 0)
 
 # Prrereq = the sorting has already been filtered by course 
+# This handles finding the timeblocks where the most people can be matched into study groups 
 def timematch(uniqueCourse, day): 
     # stackedTimelines stores how many people are available at each time represented by each index of 
     # stackedTimelines 
@@ -555,22 +561,18 @@ def timematch(uniqueCourse, day):
         am_timeblock.sort()
         pm_timeblock.sort()
         timeblock = am_timeblock+pm_timeblock
-        #contained =  any(elem in people for elem in duplicates)
         for person in people:
             if person in duplicates:
                 break
             if not person in duplicates:
-
-        #if not contained: 
                 grouper(uniqueCourse, timeblock, people, day)
                 for r in people: 
                     duplicates.append(r)
         key += 1
         key += count
-    # Handle left over people
     
 
-# prereq = the sorting has already been filtered by course and time 
+# Prereq = the sorting has already been filtered by course and time 
 # Grouping algorithm for people for a particular time interval by group size 
 def grouper(uniqueCourse, timeblock, emails, day):
     timestring = ""
@@ -595,11 +597,6 @@ def grouper(uniqueCourse, timeblock, emails, day):
        medium = sizeCount(course_entries, "m")
        small = number_of_people - large - medium  
        if small > (medium + large): 
-           #remainder = number_of_people % 3
-           #if remainder == 0: 
-           #     matchemail(emails[], locationstring, timeblock, day, uniqueCourse, True)
-           #elif remainder == 1: 
-           #else: 
            if number_of_people == 4: 
                matchemail(emails[0:2], locationstring, timeblock, day, uniqueCourse, True)
                matchemail(emails[2:4], locationstring, timeblock, day, uniqueCourse, True)

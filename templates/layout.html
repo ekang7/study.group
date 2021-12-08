@@ -14,7 +14,7 @@
             {% if session["user_id"] %}
                 <!-- tabs that will display if user is logged in -->
                 <ul>
-                    <li><a href="/main">Home</a></li>
+                    <li><a href="/">Home</a></li>
                     <li><a href="/logout">Logout</a></li>
                     <li><a href="/prefs">Preferences</a></li>
                     <li><a href="/courses">Course Resources</a></li>
@@ -22,7 +22,7 @@
             {% else %}
                 <!-- tabs that will display if user is not logged in -->
                 <ul>
-                    <li><a href="/main">Home</a></li>
+                    <li><a href="/">Home</a></li>
                     <li><a href="/register">Register</a></li>
                     <li><a href="/login">Login</a></li>
                 </ul>
